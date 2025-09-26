@@ -22,7 +22,7 @@ Este proyecto implementa un *Lexer* en Python.
 |--------------|----------------|
 | *Materia*  | Compiladores   |
 | *Proyecto* | Lexer (Análisis Léxico) |
-| *Semestre* | 2025-1         |
+| *Semestre* | 2026-1         |
 
 ---
 
