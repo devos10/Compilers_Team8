@@ -1,0 +1,10 @@
+int a = 10, b = 20, c = 30;
+int x;
+x = a + b * c;
+print("El resultado es", x);
+
+if (a < b) {
+    print("a es menor que b");
+} else if (b == a) {
+    print("a es igual a b");
+}

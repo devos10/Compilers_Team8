@@ -1,0 +1,12 @@
+int main(){
+    int x, a=1, b=2, c=3;
+    x=a+b*c;
+    print("The result is %D",x);
+    return 0;
+    if(a<b){
+        print("hola")
+    }else if(b==a){
+        print("Adios")
+    }
+}
+
