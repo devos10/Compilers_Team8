@@ -94,12 +94,12 @@ The tokens produced by the lexer are the building blocks of the compiler: the pa
 
 ### Design Considerations
 - **Types (names as they appear in the code):**
-  - `Keywords`: `int | float | for | while | if | else | return  `
-  - `Identifier`: `[a-zA-Z_]\w*  `
-  - `Punctuation`: `(, ), {, }, ;, ,  `
-  - `Operator`: `== | != | <= | >= | ++ | -- | += | -= | ... | [+\-*/%<>=!&|]  `
-  - `Constant`: `\d+(?:\.\d+)?  ` (integers and floats)
-  - `Literal`: `"..."` or `'...'  ` (strings with escapes)
+  - Keywords: `int | float | for | while | if | else | return  `
+  - Identifier: `[a-zA-Z_]\w*  `
+  - Punctuation: `(, ), {, }, ;, ,  `
+  - Operator: `== | != | <= | >= | ++ | -- | += | -= | ... | [+\-*/%<>=!&|]  `
+  - Constant: `\d+(?:\.\d+)?  ` (integers and floats)
+  - Literal: `"..."` or `'...'  ` (strings with escapes)
 
 ### Implementation 
 - **File:** `src/lexer.py`
