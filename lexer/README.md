@@ -127,14 +127,14 @@ The console output (CLI) shows grouped tokens (unique values per type), the coun
 ---
 
 ## How to run
-### Run without a file as argument (default)
+### Run with a file as argument (default)
  - If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension. 
  - If the file is in another folder, you must pass the relative or absolute path.
  Use the following command
  ```
  $ python lexer.py <input_file>
  ```
-### Run with a file as argument
+### Run without a file as argument
  - If <input_file> is not provided, the script executes an embedded code snippet included for tests.
  ```bash
  $ python lexer.py
