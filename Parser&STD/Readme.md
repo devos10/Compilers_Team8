@@ -20,8 +20,8 @@ This project implements a **Recursive Descent Parser** and a **Lexer** in Python
 
 | Field        | Detail         |
 |--------------|----------------|
-| Course       | Parser & SDT   |
-| Project      | Parser         |
+| Course       | Compilers      |
+| Project      | Parser & SDT   |
 | Semester     | 2026-1         |
 
 ---
