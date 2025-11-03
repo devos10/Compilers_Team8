@@ -1,5 +1,5 @@
-# main.py — Parser LL con soporte para funciones, bloques y comentarios
-# Extensión: declaración de funciones, llamadas a funciones, return, comentarios
+# main.py — Parser LL con validación de funciones y argumentos
+# Extensión: validación de declaración previa, printf/scanf, y tipos de argumentos
 
 from dataclasses import dataclass
 from typing import List, Optional, Any, Tuple
@@ -97,7 +97,7 @@ class SemanticError(Exception):
     pass
 
 class Parser:
-    """Parser extendido con soporte para funciones y bloques"""
+    """Parser extendido con validación de funciones y argumentos"""
     
     def __init__(self, tokens: List):
         self.tokens = tokens
@@ -107,6 +107,15 @@ class Parser:
         self.functions = {}  # Tabla de funciones: nombre -> (return_type, params)
         self.current_function_return_type = None  # Para validar returns
         self.scope_stack = []  # Pila de scopes para manejo correcto
+        
+        # Funciones predefinidas (stdlib de C)
+        self._init_builtin_functions()
+
+    def _init_builtin_functions(self):
+        """Inicializa funciones predefinidas como printf, scanf"""
+        # printf y scanf son funciones especiales que se validan de forma customizada
+        self.functions['printf'] = ('int', [], True)  # variadic
+        self.functions['scanf'] = ('int', [], True)  # variadic
 
     def _advance(self):
         """Avanza al siguiente token"""
@@ -131,14 +140,109 @@ class Parser:
     def parse(self) -> Program:
         """program → (func_decl | stmt)* EOF"""
         items = []
+        
+        # Primera pasada: recolectar todas las declaraciones de funciones
+        self._collect_function_declarations()
+        
+        # Segunda pasada: parsear completamente
+        self.i = 0
+        self.current = self.tokens[self.i]
+        
         while not self._check("EOF"):
-            # Intentar parsear función o statement
             items.append(self.top_level())
         return Program(items)
 
+    def _collect_function_declarations(self):
+        """Primera pasada para registrar todas las funciones declaradas"""
+        saved_i = self.i
+        saved_current = self.current
+        
+        while not self._check("EOF"):
+            if self._is_function_declaration():
+                # Extraer información básica de la función sin parsear el cuerpo
+                self.i += 0  # tipo
+                ret_type = self.current.lexeme if self._check('ID') else 'int'
+                self._advance()
+                
+                name = self.current.lexeme  # nombre
+                self._advance()
+                
+                self._advance()  # LPAREN
+                
+                # Parsear parámetros sin agregar a symbols
+                params = []
+                if not self._check('RPAREN'):
+                    params = self._collect_params()
+                
+                # Registrar función si no existe
+                if name not in self.functions:
+                    self.functions[name] = (ret_type, params, False)  # no variadic
+                
+                # Saltar el resto (hasta encontrar la función completa)
+                brace_count = 0
+                while not self._check('EOF'):
+                    if self._check('LBRACE'):
+                        brace_count += 1
+                        self._advance()
+                        break
+                    self._advance()
+                
+                # Saltar el cuerpo de la función
+                while brace_count > 0 and not self._check('EOF'):
+                    if self._check('LBRACE'):
+                        brace_count += 1
+                    elif self._check('RBRACE'):
+                        brace_count -= 1
+                    self._advance()
+            else:
+                # Saltar statements hasta el siguiente ;
+                while not self._check('SEMI') and not self._check('EOF'):
+                    self._advance()
+                if self._check('SEMI'):
+                    self._advance()
+        
+        # Restaurar posición
+        self.i = saved_i
+        self.current = saved_current
+
+    def _collect_params(self) -> List[Tuple[str, str]]:
+        """Recolecta parámetros sin modificar tabla de símbolos"""
+        params = []
+        
+        # Primer parámetro
+        if self._check('INT'):
+            ptype = 'int'
+        elif self._check('ID'):
+            ptype = self.current.lexeme
+        else:
+            return params
+        self._advance()
+        
+        if self._check('ID'):
+            pname = self.current.lexeme
+            self._advance()
+            params.append((ptype, pname))
+        
+        # Parámetros adicionales
+        while self._check('COMMA'):
+            self._advance()
+            if self._check('INT'):
+                ptype = 'int'
+            elif self._check('ID'):
+                ptype = self.current.lexeme
+            else:
+                break
+            self._advance()
+            
+            if self._check('ID'):
+                pname = self.current.lexeme
+                self._advance()
+                params.append((ptype, pname))
+        
+        return params
+
     def top_level(self):
         """Parsea declaraciones de nivel superior (funciones o variables globales)"""
-        # Detectar si es una función: tipo + ID + '('
         if self._is_function_declaration():
             return self.func_decl()
         else:
@@ -146,19 +250,16 @@ class Parser:
 
     def _is_function_declaration(self) -> bool:
         """Verifica si lo siguiente es una declaración de función"""
-        # Necesitamos lookahead para ver: tipo ID (
-        # Ejemplo: int main ( ...
         if self.i + 2 >= len(self.tokens):
             return False
         
-        # Buscar patrón: (INT|ID) ID LPAREN
         tok1 = self.tokens[self.i]
         tok2 = self.tokens[self.i + 1]
         tok3 = self.tokens[self.i + 2]
         
-        is_type = tok1.type in ('INT', 'ID')  # tipo
-        is_name = tok2.type == 'ID'  # nombre función
-        is_lparen = tok3.type == 'LPAREN'  # paréntesis
+        is_type = tok1.type in ('INT', 'ID')
+        is_name = tok2.type == 'ID'
+        is_lparen = tok3.type == 'LPAREN'
         
         return is_type and is_name and is_lparen
 
@@ -169,7 +270,7 @@ class Parser:
             ret_type = 'int'
             self._advance()
         elif self._check('ID'):
-            ret_type = self.current.lexeme  # void, float, etc.
+            ret_type = self.current.lexeme
             self._advance()
         else:
             raise SyntaxError_("Se esperaba un tipo de retorno")
@@ -177,20 +278,14 @@ class Parser:
         # Nombre de función
         name_tok = self._consume('ID', "Se esperaba nombre de función")
         name = name_tok.lexeme
-
-        # Guardar función en tabla de símbolos
-        if name in self.functions:
-            raise SemanticError(f"Función '{name}' ya declarada")
         
         # CREAR NUEVO SCOPE LIMPIO para la función
-        self.symbols = {}  # Resetear completamente la tabla de símbolos
+        self.symbols = {}
         
-        # Parámetros (se agregan al nuevo scope limpio)
+        # Parámetros
         self._consume('LPAREN', "Se esperaba '(' después del nombre de función")
         params = self.params() if not self._check('RPAREN') else []
         self._consume('RPAREN', "Se esperaba ')'")
-        
-        self.functions[name] = (ret_type, params)
 
         # Guardar tipo de retorno actual para validar returns
         prev_return_type = self.current_function_return_type
@@ -199,7 +294,7 @@ class Parser:
         # Cuerpo
         body = self.block()
 
-        # Limpiar scope de la función (no restaurar, simplemente limpiar)
+        # Limpiar scope de la función
         self.symbols = {}
         self.current_function_return_type = prev_return_type
 
@@ -249,32 +344,24 @@ class Parser:
 
     def stmt(self):
         """stmt → decl | assign | return_stmt | expr_stmt | block"""
-        # Return statement (puede venir como RETURN o como ID 'return')
         if self._check('RETURN') or (self._check('ID') and self.current.lexeme == 'return'):
             return self.return_stmt()
         
-        # Bloque anidado
         if self._check('LBRACE'):
             return self.block()
         
-        # Declaración de variable (int x = ...)
         if self._check("INT"):
             return self.decl()
         
-        # ID puede ser: declaración con tipo personalizado, asignación, o llamada a función
         if self._check("ID"):
-            # Lookahead
             nxt = self.tokens[self.i+1] if self.i+1 < len(self.tokens) else None
             
-            # Caso 1: ID = ... (asignación) - DEBE IR PRIMERO
             if nxt and nxt.type == 'ASSIGN':
                 return self.assign()
             
-            # Caso 2: tipo ID ... (declaración)
             if nxt and nxt.type == 'ID':
                 return self.decl_with_type()
             
-            # Caso 3: ID ( ... (llamada a función como statement)
             if nxt and nxt.type == 'LPAREN':
                 expr = self.func_call()
                 self._consume('SEMI', "Se esperaba ';' después de llamada a función")
@@ -284,11 +371,10 @@ class Parser:
 
     def return_stmt(self) -> Return:
         """return_stmt → 'return' expr? ';'"""
-        # Consumir 'return' (puede ser RETURN o ID 'return')
         if self._check('RETURN'):
             self._consume('RETURN', "Se esperaba 'return'")
         elif self._check('ID') and self.current.lexeme == 'return':
-            self._advance()  # consumir el ID 'return'
+            self._advance()
         else:
             raise SyntaxError_("Se esperaba 'return'")
         
@@ -298,7 +384,6 @@ class Parser:
         
         self._consume('SEMI', "Se esperaba ';' después de return")
         
-        # Validar tipo de retorno
         if self.current_function_return_type is not None:
             if expr is None:
                 if self.current_function_return_type != 'void':
@@ -381,9 +466,70 @@ class Parser:
         name_tok = self._consume('ID', "Se esperaba nombre de función")
         name = name_tok.lexeme
         
+        # VALIDACIÓN 1: Verificar que la función esté declarada
+        if name not in self.functions:
+            raise SemanticError(f"Función '{name}' no declarada")
+        
         self._consume('LPAREN', "Se esperaba '('")
         args = self.args() if not self._check('RPAREN') else []
         self._consume('RPAREN', "Se esperaba ')'")
+        
+        # VALIDACIÓN 2: Verificar cantidad y tipo de argumentos
+        func_info = self.functions[name]
+        return_type = func_info[0]
+        expected_params = func_info[1]
+        is_variadic = func_info[2] if len(func_info) > 2 else False
+        
+        # Validación especial para printf
+        if name == 'printf':
+            if len(args) == 0:
+                raise SemanticError("printf requiere al menos 1 argumento")
+            
+            # Si solo tiene 1 argumento: puede ser string o variable
+            if len(args) == 1:
+                arg_type = self.typeof(args[0])
+                if isinstance(args[0], Var) and args[0].name not in self.symbols:
+                    raise SemanticError(f"printf: variable '{args[0].name}' no declarada")
+            else:
+                
+                for i, arg in enumerate(args[1:], start=2):
+                    if not isinstance(arg, Var):
+                        raise SemanticError(f"printf: argumento {i} debe ser una variable")
+                    if arg.name not in self.symbols:
+                        raise SemanticError(f"printf: variable '{arg.name}' no declarada")
+        
+        # Validación especial para scanf
+        elif name == 'scanf':
+            if len(args) == 0:
+                raise SemanticError("scanf requiere al menos 1 argumento")
+            
+            # Todos los argumentos deben ser variables declaradas
+            for i, arg in enumerate(args, start=1):
+                if not isinstance(arg, Var):
+                    raise SemanticError(f"scanf: argumento {i} debe ser una variable")
+                if arg.name not in self.symbols:
+                    raise SemanticError(f"scanf: variable '{arg.name}' no declarada")
+        
+        # Validación para otras funciones
+        elif not is_variadic:
+            if len(args) != len(expected_params):
+                raise SemanticError(
+                    f"Función '{name}' espera {len(expected_params)} argumento(s), "
+                    f"se proporcionaron {len(args)}"
+                )
+            
+            for i, (arg, (expected_type, param_name)) in enumerate(zip(args, expected_params)):
+                arg_type = self.typeof(arg)
+                
+                if arg_type == expected_type:
+                    continue
+                elif arg_type == 'int' and expected_type == 'float':
+                    continue
+                else:
+                    raise SemanticError(
+                        f"Función '{name}', argumento {i+1} ('{param_name}'): "
+                        f"se esperaba {expected_type}, se obtuvo {arg_type}"
+                    )
         
         return FuncCall(name, args)
 
@@ -400,13 +546,11 @@ class Parser:
 
     def factor(self):
         """factor → ('+'|'-') factor | NUM | STRING | ID ('(' args? ')')? | '(' expr ')'"""
-        # Operadores unarios
         if self._check("PLUS") or self._check("MINUS"):
             op = self.current.lexeme
             self._advance()
             return UnaryOp(op, self.factor())
 
-        # Números
         if self._check("NUM"):
             tok = self.current
             self._advance()
@@ -414,27 +558,22 @@ class Parser:
                 raise SyntaxError_("Número mal formado")
             return Num(tok.literal)
 
-        # Strings
         if self._check("STRING"):
             tok = self.current
             self._advance()
             return String(tok.literal)
 
-        # ID (variable o función)
         if self._check("ID"):
             name = self.current.lexeme
             self._advance()
             
-            # Si sigue '(', es llamada a función
             if self._check('LPAREN'):
-                self.i -= 1  # Retroceder para que func_call procese desde ID
+                self.i -= 1
                 self.current = self.tokens[self.i]
                 return self.func_call()
             
-            # Es una variable
             return Var(name)
 
-        # Paréntesis
         if self._check("LPAREN"):
             self._advance()
             e = self.logical_or()
@@ -519,10 +658,8 @@ class Parser:
             return self.symbols[node.name]
         
         if isinstance(node, FuncCall):
-            # Para llamadas a función, necesitamos saber su tipo de retorno
             if node.name in self.functions:
-                return self.functions[node.name][0]  # return_type
-            # Función desconocida - asumir que es válida (ej: printf)
+                return self.functions[node.name][0]
             return 'void'
         
         if isinstance(node, UnaryOp):
