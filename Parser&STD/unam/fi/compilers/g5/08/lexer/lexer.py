@@ -49,23 +49,7 @@ def lexer(code: str):
         for ch in text:
             _advance(ch)
             
-    def _check_unclosed_string():
-        """Detecta y maneja literales de cadena sin cerrar"""
-        if code[pos] not in '"\'':
-            return False
-        quote = code[pos]
-        start_line, start_col = line, col
-        i = pos + 1
-        while i < n:
-            if code[i] == '\\' and i + 1 < n:  # skip escaped chars
-                i += 2
-                continue
-            if code[i] == quote:
-                return False  # found closing quote
-            if code[i] == '\n':
-                raise SyntaxError(f"Literal de cadena sin cerrar iniciado en L{start_line} C{start_col}")
-            i += 1
-        raise SyntaxError(f"Literal de cadena sin cerrar iniciado en L{start_line} C{start_col}")
+   
 
     while pos < n:
         ch = code[pos]
@@ -115,9 +99,7 @@ def lexer(code: str):
         if matched:
             continue
 
-        # Verificar si es un literal sin cerrar
-        if _check_unclosed_string():
-            continue  # nunca llega aquí porque _check_unclosed_string siempre lanza excepción si detecta error
+        # Verificar si es un literal sin cerraranza excepción si detecta error
             
         # Si no se reconoció nada, determinar el tipo de error más probable
         ch = code[pos]
@@ -183,3 +165,4 @@ int main() {
 
     # Total de tokens detectados (de la entrada)
     print(f"\nTotal= {len(tokens_detectados)}")
+
