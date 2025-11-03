@@ -1,0 +1,5 @@
+//FUNCION NO DECLARADA
+int main() {
+    saludar();
+    return 0;
+}
