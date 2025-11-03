@@ -1,23 +1,53 @@
-# main.py — Parser LL sencillo + SDT (tipado int) con entrada desde user_lexer vía adapter_lexer
-# Mejora: soporte de unario (+/-) SIN cambiar nombres ya usados en el parser
-#
-# Este archivo implementa un parser descendente recursivo (LL) con análisis semántico
-# dirigido por sintaxis (SDT) que verifica tipos en tiempo de compilación.
-# Soporta múltiples tipos de datos (int, float, string, bool) y sus operaciones.
+# main.py — Parser LL con soporte para funciones, bloques y comentarios
+# Extensión: declaración de funciones, llamadas a funciones, return, comentarios
 
 from dataclasses import dataclass
 from typing import List, Optional, Any, Tuple
 
 # === Tokens estándar (desde adapter_lexer) ===
-from lexer.adapter_lexer import tokenize_std as lex  # devuelve List[Token(type, lexeme, literal, pos)]
+from lexer.adapter_lexer import tokenize_std as lex
 
-# ======= Definición del AST (Abstract Syntax Tree) =======
-# Cada clase representa un nodo diferente en el árbol de sintaxis abstracta
+# ======= Definición del AST extendido =======
 
 @dataclass
 class Program:
-    """Nodo raíz del programa que contiene todas las sentencias"""
+    """Nodo raíz del programa que contiene todas las funciones y sentencias globales"""
+    items: list  # Puede contener FuncDecl, Decl, etc.
+
+@dataclass
+class FuncDecl:
+    """Declaración de función
+    Ejemplo: int main() { ... }
+    """
+    return_type: str  # 'int', 'void', 'float', etc.
+    name: str
+    params: List[Tuple[str, str]]  # [(tipo, nombre), ...]
+    body: 'Block'
+
+@dataclass
+class Block:
+    """Bloque de código (entre { })"""
     statements: list
+
+@dataclass
+class Return:
+    """Statement de retorno
+    Ejemplo: return x;
+    """
+    expr: Optional[Any]  # None para 'return;'
+
+@dataclass
+class FuncCall:
+    """Llamada a función
+    Ejemplo: printf("hola");
+    """
+    name: str
+    args: list  # Lista de expresiones
+
+@dataclass
+class ExprStmt:
+    """Statement que es solo una expresión (ej: llamada a función)"""
+    expr: Any
 
 @dataclass
 class String:
@@ -26,171 +56,276 @@ class String:
 
 @dataclass
 class Decl:
-    """Declaración de variable con inicialización opcional
-    Ejemplo: int x = 5; o string s = "hola";
-    """
+    """Declaración de variable con inicialización opcional"""
     name: str
-    init: Optional[Any]  # Expr | None
+    init: Optional[Any]
 
 @dataclass
 class Assign:
-    """Asignación de valor a una variable ya declarada
-    Ejemplo: x = 10;
-    """
+    """Asignación de valor a una variable"""
     name: str
-    expr: Any  # Expr
+    expr: Any
 
 @dataclass
 class BinOp:
-    """Operación binaria (dos operandos)
-    Soporta: +, -, *, /, %, ==, !=, <, >, <=, >=, &&, ||
-    """
+    """Operación binaria"""
     left: Any
     op: str
     right: Any
 
 @dataclass
 class Num:
-    """Representa un literal numérico (int o float)"""
+    """Representa un literal numérico"""
     value: int
 
 @dataclass
 class Var:
-    """Referencia a una variable por su nombre"""
+    """Referencia a una variable"""
     name: str
 
 @dataclass
 class UnaryOp:
-    """Operación unaria (un solo operando)
-    Soporta: + (positivo), - (negativo)
-    Ejemplo: -5, +x
-    """
+    """Operación unaria"""
     op: str
     expr: Any
 
-# ======= Excepciones personalizadas =======
+# ======= Excepciones =======
 class SyntaxError_(Exception):
-    """Error de sintaxis durante el parsing"""
     pass
 
 class SemanticError(Exception):
-    """Error semántico (tipos incompatibles, variables no declaradas, etc.)"""
     pass
 
 class Parser:
-    """Parser descendente recursivo (LL) con análisis semántico integrado
+    """Parser extendido con soporte para funciones y bloques"""
     
-    Implementa un analizador sintáctico que construye un AST (Árbol de Sintaxis Abstracta)
-    y verifica tipos en tiempo de compilación mediante SDT (Syntax-Directed Translation).
-    """
     def __init__(self, tokens: List):
-        """Inicializa el parser con la lista de tokens
-        
-        Args:
-            tokens: Lista de tokens obtenida del lexer
-        """
         self.tokens = tokens
-        self.i = 0  # Índice del token actual
+        self.i = 0
         self.current = self.tokens[self.i]
-        self.symbols = {}  # Tabla de símbolos: nombre -> tipo ('int', 'float', 'string', 'bool')
+        self.symbols = {}  # Tabla de símbolos: nombre -> tipo
+        self.functions = {}  # Tabla de funciones: nombre -> (return_type, params)
+        self.current_function_return_type = None  # Para validar returns
+        self.scope_stack = []  # Pila de scopes para manejo correcto
 
-    # ------------- Métodos auxiliares -------------
     def _advance(self):
-        """Avanza al siguiente token si no estamos al final"""
+        """Avanza al siguiente token"""
         if self.i < len(self.tokens)-1:
             self.i += 1
             self.current = self.tokens[self.i]
 
     def _check(self, ttype: str) -> bool:
-        """Verifica si el token actual es del tipo especificado
-        
-        Args:
-            ttype: Tipo de token a verificar (ej: 'INT', 'ID', 'SEMI')
-            
-        Returns:
-            True si el token actual coincide con el tipo, False en caso contrario
-        """
+        """Verifica si el token actual es del tipo especificado"""
         return self.current.type == ttype
 
     def _consume(self, ttype: str, msg: str):
-        """Consume un token del tipo esperado o lanza error
-        
-        Args:
-            ttype: Tipo de token esperado
-            msg: Mensaje de error si el token no coincide
-            
-        Returns:
-            El token consumido
-            
-        Raises:
-            SyntaxError_: Si el token actual no es del tipo esperado
-        """
+        """Consume un token del tipo esperado o lanza error"""
         if self._check(ttype):
             tok = self.current
             self._advance()
             return tok
-        raise SyntaxError_(f"{msg} (got {self.current.type})")
+        raise SyntaxError_(f"{msg} (got {self.current.type} '{self.current.lexeme}')")
 
-    # ------------- Reglas gramaticales -------------
+    # ============= GRAMÁTICA EXTENDIDA =============
+    
     def parse(self) -> Program:
-        """Punto de entrada del parser. Analiza el programa completo.
-        
-        Gramática: program → stmt* EOF
-        
-        Returns:
-            Program: Nodo raíz del AST con todas las sentencias
-        """
-        stmts = []
+        """program → (func_decl | stmt)* EOF"""
+        items = []
         while not self._check("EOF"):
+            # Intentar parsear función o statement
+            items.append(self.top_level())
+        return Program(items)
+
+    def top_level(self):
+        """Parsea declaraciones de nivel superior (funciones o variables globales)"""
+        # Detectar si es una función: tipo + ID + '('
+        if self._is_function_declaration():
+            return self.func_decl()
+        else:
+            return self.stmt()
+
+    def _is_function_declaration(self) -> bool:
+        """Verifica si lo siguiente es una declaración de función"""
+        # Necesitamos lookahead para ver: tipo ID (
+        # Ejemplo: int main ( ...
+        if self.i + 2 >= len(self.tokens):
+            return False
+        
+        # Buscar patrón: (INT|ID) ID LPAREN
+        tok1 = self.tokens[self.i]
+        tok2 = self.tokens[self.i + 1]
+        tok3 = self.tokens[self.i + 2]
+        
+        is_type = tok1.type in ('INT', 'ID')  # tipo
+        is_name = tok2.type == 'ID'  # nombre función
+        is_lparen = tok3.type == 'LPAREN'  # paréntesis
+        
+        return is_type and is_name and is_lparen
+
+    def func_decl(self) -> FuncDecl:
+        """func_decl → type ID '(' params? ')' block"""
+        # Tipo de retorno
+        if self._check('INT'):
+            ret_type = 'int'
+            self._advance()
+        elif self._check('ID'):
+            ret_type = self.current.lexeme  # void, float, etc.
+            self._advance()
+        else:
+            raise SyntaxError_("Se esperaba un tipo de retorno")
+
+        # Nombre de función
+        name_tok = self._consume('ID', "Se esperaba nombre de función")
+        name = name_tok.lexeme
+
+        # Guardar función en tabla de símbolos
+        if name in self.functions:
+            raise SemanticError(f"Función '{name}' ya declarada")
+        
+        # CREAR NUEVO SCOPE LIMPIO para la función
+        self.symbols = {}  # Resetear completamente la tabla de símbolos
+        
+        # Parámetros (se agregan al nuevo scope limpio)
+        self._consume('LPAREN', "Se esperaba '(' después del nombre de función")
+        params = self.params() if not self._check('RPAREN') else []
+        self._consume('RPAREN', "Se esperaba ')'")
+        
+        self.functions[name] = (ret_type, params)
+
+        # Guardar tipo de retorno actual para validar returns
+        prev_return_type = self.current_function_return_type
+        self.current_function_return_type = ret_type
+
+        # Cuerpo
+        body = self.block()
+
+        # Limpiar scope de la función (no restaurar, simplemente limpiar)
+        self.symbols = {}
+        self.current_function_return_type = prev_return_type
+
+        return FuncDecl(ret_type, name, params, body)
+
+    def params(self) -> List[Tuple[str, str]]:
+        """params → param (',' param)*"""
+        result = []
+        result.append(self.param())
+        while self._check('COMMA'):
+            self._advance()
+            result.append(self.param())
+        return result
+
+    def param(self) -> Tuple[str, str]:
+        """param → type ID"""
+        if self._check('INT'):
+            ptype = 'int'
+            self._advance()
+        elif self._check('ID'):
+            ptype = self.current.lexeme
+            self._advance()
+        else:
+            raise SyntaxError_("Se esperaba un tipo en parámetro")
+        
+        name_tok = self._consume('ID', "Se esperaba nombre de parámetro")
+        pname = name_tok.lexeme
+        
+        # Agregar parámetro a tabla de símbolos local
+        self.symbols[pname] = ptype
+        
+        return (ptype, pname)
+
+    def block(self) -> Block:
+        """block → '{' stmt* '}'"""
+        self._consume('LBRACE', "Se esperaba '{'")
+        
+        stmts = []
+        while not self._check('RBRACE'):
+            if self._check('EOF'):
+                raise SyntaxError_("Se esperaba '}' pero se alcanzó EOF")
             stmts.append(self.stmt())
-        return Program(stmts)
+        
+        self._consume('RBRACE', "Se esperaba '}'")
+        
+        return Block(stmts)
 
     def stmt(self):
-        """Analiza una sentencia (declaración o asignación)
+        """stmt → decl | assign | return_stmt | expr_stmt | block"""
+        # Return statement (puede venir como RETURN o como ID 'return')
+        if self._check('RETURN') or (self._check('ID') and self.current.lexeme == 'return'):
+            return self.return_stmt()
         
-        Gramática: stmt → decl | assign
+        # Bloque anidado
+        if self._check('LBRACE'):
+            return self.block()
         
-        Returns:
-            Decl | Assign: Nodo del AST correspondiente a la sentencia
-            
-        Raises:
-            SyntaxError_: Si no se reconoce el inicio de una sentencia válida
-        """
+        # Declaración de variable (int x = ...)
         if self._check("INT"):
             return self.decl()
-        elif self._check("ID"):
-            # Lookahead: si el siguiente token también es ID, lo interpretamos como
-            # 'TYPE ID ...' (declaración con nombre de tipo como identificador)
+        
+        # ID puede ser: declaración con tipo personalizado, asignación, o llamada a función
+        if self._check("ID"):
+            # Lookahead
             nxt = self.tokens[self.i+1] if self.i+1 < len(self.tokens) else None
+            
+            # Caso 1: ID = ... (asignación) - DEBE IR PRIMERO
+            if nxt and nxt.type == 'ASSIGN':
+                return self.assign()
+            
+            # Caso 2: tipo ID ... (declaración)
             if nxt and nxt.type == 'ID':
                 return self.decl_with_type()
-            return self.assign()
-        else:
-            raise SyntaxError_("Se esperaba 'int' o ID al inicio de una sentencia")
-
-    # decl → 'int' ID ('=' expr)? ';'
-    def decl(self):
-        """Analiza una declaración de variable de tipo int
-        
-        Gramática: decl → 'int' ID ('=' expr)? ';'
-        
-        Returns:
-            Decl: Nodo de declaración con el nombre y expresión de inicialización
             
-        Raises:
-            SemanticError: Si la variable ya está declarada o el tipo de inicialización no coincide
-        """
+            # Caso 3: ID ( ... (llamada a función como statement)
+            if nxt and nxt.type == 'LPAREN':
+                expr = self.func_call()
+                self._consume('SEMI', "Se esperaba ';' después de llamada a función")
+                return ExprStmt(expr)
+        
+        raise SyntaxError_(f"Statement no reconocido: {self.current.type} '{self.current.lexeme}'")
+
+    def return_stmt(self) -> Return:
+        """return_stmt → 'return' expr? ';'"""
+        # Consumir 'return' (puede ser RETURN o ID 'return')
+        if self._check('RETURN'):
+            self._consume('RETURN', "Se esperaba 'return'")
+        elif self._check('ID') and self.current.lexeme == 'return':
+            self._advance()  # consumir el ID 'return'
+        else:
+            raise SyntaxError_("Se esperaba 'return'")
+        
+        expr = None
+        if not self._check('SEMI'):
+            expr = self.logical_or()
+        
+        self._consume('SEMI', "Se esperaba ';' después de return")
+        
+        # Validar tipo de retorno
+        if self.current_function_return_type is not None:
+            if expr is None:
+                if self.current_function_return_type != 'void':
+                    raise SemanticError(f"Return sin valor en función que retorna {self.current_function_return_type}")
+            else:
+                expr_type = self.typeof(expr)
+                if expr_type != self.current_function_return_type:
+                    if not (expr_type == 'int' and self.current_function_return_type == 'float'):
+                        raise SemanticError(f"Tipo de return incompatible: se esperaba {self.current_function_return_type}, se obtuvo {expr_type}")
+        
+        return Return(expr)
+
+    def decl(self):
+        """decl → 'int' ID ('=' expr)? ';'"""
         self._consume("INT", "Se esperaba 'int'")
         name_tok = self._consume("ID", "Se esperaba un identificador")
+        name = name_tok.lexeme
+        
+        if name in self.symbols:
+            raise SemanticError(f"Variable '{name}' ya declarada")
+        
         init_expr = None
         if self._check("ASSIGN"):
             self._advance()
             init_expr = self.logical_or()
         self._consume("SEMI", "Falta ';' al final de la declaración")
 
-        name = name_tok.lexeme
-        if name in self.symbols:
-            raise SemanticError(f"Variable '{name}' ya declarada")
         self.symbols[name] = 'int'
 
         if init_expr is not None:
@@ -200,18 +335,8 @@ class Parser:
 
         return Decl(name, init_expr)
 
-    # assign → ID '=' expr ';'
     def assign(self):
-        """Analiza una asignación a una variable existente
-        
-        Gramática: assign → ID '=' expr ';'
-        
-        Returns:
-            Assign: Nodo de asignación con el nombre de la variable y la expresión
-            
-        Raises:
-            SemanticError: Si la variable no está declarada o hay incompatibilidad de tipos
-        """
+        """assign → ID '=' expr ';'"""
         name_tok = self._consume("ID", "Se esperaba un identificador")
         self._consume("ASSIGN", "Se esperaba '='")
         e = self.logical_or()
@@ -221,24 +346,14 @@ class Parser:
         if name not in self.symbols:
             raise SemanticError(f"Variable '{name}' no declarada")
         t = self.typeof(e)
-        if t != 'int':
-            raise SemanticError(f"Tipo incompatible en asignación a '{name}': {t}")
+        expected_type = self.symbols[name]
+        if t != expected_type:
+            if not (t == 'int' and expected_type == 'float'):
+                raise SemanticError(f"Tipo incompatible en asignación a '{name}': se esperaba {expected_type}, se obtuvo {t}")
         return Assign(name, e)
 
-    # decl_with_type → ID ID ('=' expr)? ';'
-    # Soporta declaraciones donde el primer ID es el nombre del tipo (por ejemplo 'string s = "a";')
     def decl_with_type(self):
-        """Analiza una declaración de variable con tipo personalizado
-        
-        Gramática: decl_with_type → ID ID ('=' expr)? ';'
-        Soporta tipos como: string, float, bool
-        
-        Returns:
-            Decl: Nodo de declaración con el nombre y expresión de inicialización
-            
-        Raises:
-            SemanticError: Si la variable ya está declarada o hay incompatibilidad de tipos
-        """
+        """decl_with_type → ID ID ('=' expr)? ';'"""
         type_tok = self._consume('ID', "Se esperaba un tipo")
         name_tok = self._consume('ID', "Se esperaba un identificador")
         init_expr = None
@@ -251,37 +366,47 @@ class Parser:
         name = name_tok.lexeme
         if name in self.symbols:
             raise SemanticError(f"Variable '{name}' ya declarada")
-        # Guardamos el tipo tal cual (p. ej. 'string', 'float', 'int', 'bool')
         self.symbols[name] = type_name
 
         if init_expr is not None:
             t = self.typeof(init_expr)
-            # Compatibilidad simple: mismo tipo, o int -> float permitido
             if t != type_name:
                 if not (t == 'int' and type_name == 'float'):
                     raise SemanticError(f"Tipo incompatible en inicialización de '{name}': {t}")
 
         return Decl(name, init_expr)
 
-    # factor → ('+'|'-') factor | NUM | STRING | ID | '(' expr ')'
+    def func_call(self) -> FuncCall:
+        """func_call → ID '(' args? ')'"""
+        name_tok = self._consume('ID', "Se esperaba nombre de función")
+        name = name_tok.lexeme
+        
+        self._consume('LPAREN', "Se esperaba '('")
+        args = self.args() if not self._check('RPAREN') else []
+        self._consume('RPAREN', "Se esperaba ')'")
+        
+        return FuncCall(name, args)
+
+    def args(self) -> list:
+        """args → expr (',' expr)*"""
+        result = []
+        result.append(self.logical_or())
+        while self._check('COMMA'):
+            self._advance()
+            result.append(self.logical_or())
+        return result
+
+    # ============= EXPRESIONES =============
+
     def factor(self):
-        """Analiza un factor (unidad básica de expresión)
-        
-        Gramática: factor → ('+'|'-') factor | NUM | STRING | ID | '(' expr ')'
-        
-        Returns:
-            UnaryOp | Num | String | Var | Expr: Nodo del AST correspondiente al factor
-            
-        Raises:
-            SyntaxError_: Si no se reconoce un factor válido
-        """
-        # Soporte para operadores unarios (+/-)
+        """factor → ('+'|'-') factor | NUM | STRING | ID ('(' args? ')')? | '(' expr ')'"""
+        # Operadores unarios
         if self._check("PLUS") or self._check("MINUS"):
             op = self.current.lexeme
             self._advance()
             return UnaryOp(op, self.factor())
 
-        # Números literales (int o float)
+        # Números
         if self._check("NUM"):
             tok = self.current
             self._advance()
@@ -289,19 +414,27 @@ class Parser:
                 raise SyntaxError_("Número mal formado")
             return Num(tok.literal)
 
-        # Literales de cadena
+        # Strings
         if self._check("STRING"):
             tok = self.current
             self._advance()
             return String(tok.literal)
 
-        # Identificadores (variables)
+        # ID (variable o función)
         if self._check("ID"):
-            tok = self.current
+            name = self.current.lexeme
             self._advance()
-            return Var(tok.lexeme)
+            
+            # Si sigue '(', es llamada a función
+            if self._check('LPAREN'):
+                self.i -= 1  # Retroceder para que func_call procese desde ID
+                self.current = self.tokens[self.i]
+                return self.func_call()
+            
+            # Es una variable
+            return Var(name)
 
-        # Expresiones entre paréntesis
+        # Paréntesis
         if self._check("LPAREN"):
             self._advance()
             e = self.logical_or()
@@ -310,15 +443,8 @@ class Parser:
 
         raise SyntaxError_("Factor inválido")
 
-    # term → factor (('*'|'/') factor)*
     def term(self):
-        """Analiza un término (multiplicación, división, módulo)
-        
-        Gramática: term → factor (('*'|'/'|'%') factor)*
-        
-        Returns:
-            BinOp | Factor: Nodo del AST correspondiente al término
-        """
+        """term → factor (('*'|'/'|'%') factor)*"""
         left = self.factor()
         while self._check("STAR") or self._check("SLASH") or self._check("PERC"):
             op = self.current.lexeme
@@ -327,15 +453,8 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # additive → term (('+'|'-') term)*
     def additive(self):
-        """Analiza expresiones aditivas (suma y resta)
-        
-        Gramática: additive → term (('+'|'-') term)*
-        
-        Returns:
-            BinOp | Term: Nodo del AST correspondiente a la expresión aditiva
-        """
+        """additive → term (('+'|'-') term)*"""
         left = self.term()
         while self._check("PLUS") or self._check("MINUS"):
             op = self.current.lexeme
@@ -344,15 +463,8 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # relational → additive (('<'|'>'|'LE'|'GE') additive)?
     def relational(self):
-        """Analiza expresiones relacionales (comparaciones)
-        
-        Gramática: relational → additive (('<'|'>'|'<='|'>=') additive)?
-        
-        Returns:
-            BinOp | Additive: Nodo del AST correspondiente a la comparación
-        """
+        """relational → additive (('<'|'>'|'<='|'>=') additive)?"""
         left = self.additive()
         while self._check('LT') or self._check('GT') or self._check('LE') or self._check('GE'):
             op = self.current.lexeme
@@ -361,15 +473,8 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # equality → relational (('=='|'!=' ) relational)*
     def equality(self):
-        """Analiza expresiones de igualdad/desigualdad
-        
-        Gramática: equality → relational (('=='|'!=') relational)*
-        
-        Returns:
-            BinOp | Relational: Nodo del AST correspondiente a la igualdad
-        """
+        """equality → relational (('=='|'!=') relational)*"""
         left = self.relational()
         while self._check('EQ') or self._check('NEQ'):
             op = self.current.lexeme
@@ -378,15 +483,8 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # logical_and → equality ( 'AND' equality )*
     def logical_and(self):
-        """Analiza expresiones lógicas AND (&&)
-        
-        Gramática: logical_and → equality ('&&' equality)*
-        
-        Returns:
-            BinOp | Equality: Nodo del AST correspondiente a la operación AND
-        """
+        """logical_and → equality ('&&' equality)*"""
         left = self.equality()
         while self._check('AND'):
             op = self.current.lexeme
@@ -395,15 +493,8 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # logical_or → logical_and ( 'OR' logical_and )*
     def logical_or(self):
-        """Analiza expresiones lógicas OR (||)
-        
-        Gramática: logical_or → logical_and ('||' logical_and)*
-        
-        Returns:
-            BinOp | LogicalAnd: Nodo del AST correspondiente a la operación OR
-        """
+        """logical_or → logical_and ('||' logical_and)*"""
         left = self.logical_and()
         while self._check('OR'):
             op = self.current.lexeme
@@ -412,34 +503,29 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # ===== SDT tipo simple =====
+    # ============= ANÁLISIS SEMÁNTICO =============
+
     def typeof(self, node) -> str:
-        """Determina el tipo de una expresión del AST (SDT - Syntax-Directed Translation)
-        
-        Args:
-            node: Nodo del AST a evaluar
-            
-        Returns:
-            str: El tipo del nodo ('int', 'float', 'string', 'bool')
-            
-        Raises:
-            SemanticError: Si hay errores de tipos o incompatibilidades
-        """
+        """Determina el tipo de una expresión del AST"""
         if isinstance(node, Num):
-            # Determinamos el tipo basado en el valor
             return 'float' if isinstance(node.value, float) else 'int'
         
         if isinstance(node, String):
             return 'string'
         
         if isinstance(node, Var):
-            # Verifica que la variable esté declarada
             if node.name not in self.symbols:
                 raise SemanticError(f"Uso de variable no declarada '{node.name}'")
             return self.symbols[node.name]
         
+        if isinstance(node, FuncCall):
+            # Para llamadas a función, necesitamos saber su tipo de retorno
+            if node.name in self.functions:
+                return self.functions[node.name][0]  # return_type
+            # Función desconocida - asumir que es válida (ej: printf)
+            return 'void'
+        
         if isinstance(node, UnaryOp):
-            # Los operadores unarios solo se aplican a números
             t = self.typeof(node.expr)
             if t not in ('int', 'float'):
                 raise SemanticError(f"Unario '{node.op}' espera número, obtuvo {t}")
@@ -449,31 +535,23 @@ class Parser:
             tl = self.typeof(node.left)
             tr = self.typeof(node.right)
 
-            # Caso especial: '+' puede ser concatenación de strings o suma numérica
             if node.op == '+':
-                # Si ambos son strings -> concatenación
                 if tl == 'string' and tr == 'string':
                     return 'string'
-                # Si ambos son numéricos -> suma (con promoción a float)
                 if tl in ('int', 'float') and tr in ('int', 'float'):
                     return 'float' if 'float' in (tl, tr) else 'int'
                 raise SemanticError(f"Operación '+' incompatible entre {tl} y {tr}")
 
-            # Operaciones aritméticas (-, *, /, %)
             if node.op in ('-', '*', '/', '%'):
                 if tl in ('int', 'float') and tr in ('int', 'float'):
-                    # Promoción de tipo: si alguno es float, el resultado es float
                     return 'float' if 'float' in (tl, tr) else 'int'
                 raise SemanticError(f"Operación '{node.op}' espera números, obtuvo {tl} y {tr}")
 
-            # Operaciones de comparación (retornan bool)
             if node.op in ('==', '!=', '<', '>', '<=', '>='):
-                # Comparación entre números o entre strings
                 if (tl in ('int', 'float') and tr in ('int', 'float')) or (tl == tr == 'string'):
                     return 'bool'
                 raise SemanticError(f"Comparación '{node.op}' incompatible entre {tl} y {tr}")
 
-            # Operaciones lógicas (&&, ||) - requieren booleanos
             if node.op in ('&&', '||'):
                 if tl == tr == 'bool':
                     return 'bool'
@@ -482,17 +560,7 @@ class Parser:
         raise SemanticError(f"No sé inferir tipo de {type(node).__name__}")
 
 def run(src: str):
-    """Función principal para ejecutar el parser y análisis semántico
-    
-    Args:
-        src: Código fuente a analizar
-        
-    Imprime:
-        - "Parsing Success!" si el análisis sintáctico es correcto
-        - "SDT Verified!" si el análisis semántico es correcto
-        - Mensajes de error en caso de fallo
-    """
-    # Fase 1: Análisis léxico (tokenización)
+    """Función principal para ejecutar el parser"""
     try:
         tokens = lex(src)
     except Exception as e:
@@ -502,7 +570,6 @@ def run(src: str):
 
     p = Parser(tokens)
 
-    # Fase 2: Análisis sintáctico (parsing)
     try:
         ast = p.parse()
     except SyntaxError_ as e:
@@ -515,18 +582,22 @@ def run(src: str):
         print(str(e))
         return
 
-    # Fase 3: Validación semántica adicional (SDT)
-    try:
-        for st in ast.statements:
-            if isinstance(st, Decl) and st.init is not None:
-                _ = p.typeof(st.init)
-            elif isinstance(st, Assign):
-                _ = p.typeof(st.expr)
-    except SemanticError as e:
-        print("Parsing Success!")
-        print("SDT error...")
-        print(str(e))
-        return
-
     print("Parsing Success!")
     print("SDT Verified!")
+
+# Método auxiliar para validar bloques recursivamente
+def _validate_block(self, block: Block):
+    """Valida tipos en un bloque de código"""
+    for st in block.statements:
+        if isinstance(st, Block):
+            self._validate_block(st)
+        elif isinstance(st, Decl) and st.init is not None:
+            _ = self.typeof(st.init)
+        elif isinstance(st, Assign):
+            _ = self.typeof(st.expr)
+        elif isinstance(st, Return) and st.expr is not None:
+            _ = self.typeof(st.expr)
+        elif isinstance(st, ExprStmt):
+            _ = self.typeof(st.expr)
+
+Parser._validate_block = _validate_block
