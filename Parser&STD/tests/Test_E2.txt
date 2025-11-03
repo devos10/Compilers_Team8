@@ -1,0 +1,13 @@
+//FLOAT Y STRING
+float calcular(float a, float b) {
+    float resultado = a * b;
+    return resultado;
+}
+
+int main() {
+    string mensaje = "Hola Mundo";
+    float pi = 3.14159;
+    float r = calcular (5.5, 2.0);
+    printf (r);
+    return 0;
+}
