@@ -1,6 +1,7 @@
 # main.py — Parser LL con soporte para funciones, bloques y comentarios
 # Extensión: declaración de funciones, llamadas a funciones, return, comentarios
 
+
 from dataclasses import dataclass
 from typing import List, Optional, Any, Tuple
 
