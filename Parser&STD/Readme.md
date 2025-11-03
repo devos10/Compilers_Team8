@@ -33,20 +33,20 @@ The *Parser* receives a sequence of tokens from the lexer and builds an **Abstra
 This project includes:
 - A **Lexer** that tokenizes the input source code, including support for function declarations and calls.
 - A **Recursive Descent Parser** that constructs the AST and performs semantic analysis (type checking, variable declaration, function analysis, etc.).
-- **Function detection** that identifies both function declarations/definitions and function calls.
+- **Two-pass function detection** that first collects all function declarations, then validates function calls and their arguments.
 
 ---
 
 ## Problem formulation
 The objective of the project is to design and implement a parser that:
 - Reads an input file or code from stdin.
-- Tokenizes the input using the lexical analyzer created previously.
+- Tokenizes the input using the lexical analyzer.
 - Analyzes the sequence of tokens, constructing an AST.
-- Performs semantic checks (type compatibility, variable declaration, function usage, etc.).
-- Detects and reports function declarations and calls.
-- Reports errors with informative messages including line and column numbers.
+- Performs semantic checks (type compatibility, variable declaration, function usage, argument validation, etc.).
+- Validates function declarations and calls with proper type checking.
+- Reports errors with informative messages.
 
-The main entry point is the function `run(src: str)` (see `main.py`), which processes the source code, prints parsing and semantic results, or error messages.
+The main entry point is the function `run(src: str)` (see `main.py`), which processes the source code and prints parsing and semantic results, or error messages.
 
 ---
 
@@ -57,56 +57,65 @@ Understanding function declarations and calls is crucial for:
 - Validating function signatures and parameters
 - Ensuring functions are declared before being called
 - Type checking function arguments and return values
+- Special handling of variadic functions like `printf()` and `scanf()`
 
 ---
 
 ## Objectives
-- Correctly parse variable declarations, assignments, and expressions with support for multiple data types (`int`, `float`, `string`, `bool`, `char`, `double`, `void`).
-- Parse and validate function declarations and function calls (e.g., `printf()`, `scanf()`, custom functions).
+- Correctly parse variable declarations, assignments, and expressions with support for multiple data types (`int`, `float`, `string`, `bool`).
+- Parse and validate function declarations and function calls (including builtin functions like `printf()`, `scanf()`).
 - Build an Abstract Syntax Tree (AST) representing the program structure.
 - Perform semantic checks:
   - Type compatibility in assignments and expressions.
   - Variable declaration before use.
-  - Function declaration before invocation.
+  - Function declaration before invocation (two-pass approach).
   - Detection of redeclarations and type errors.
-  - Parameter validation in function calls.
-- Provide clear and informative error messages for both syntax and semantic errors with line and column information.
+  - Parameter count and type validation in function calls.
+  - Return type validation.
+- Provide clear and informative error messages for both syntax and semantic errors.
 
 ---
 
 ## Technologies
 - **Language:** Python 3.8+
 - **Libraries used and their use in the code:**
-  - `re` → Regular expressions for token recognition in the lexer.
   - `dataclasses` → Definition of AST node classes and tokens.
-  - `collections.defaultdict` → Grouping tokens by type for reporting.
-  - `sys` → Reading command-line arguments and input files.
-  - `os` → File existence and path handling.
   - `typing` → Type annotations for clarity and safety.
+  - `re` → Regular expressions for token recognition in the lexer (in `adapter_lexer.py`).
 
 ---
 
 ## Theoretical Framework & Design used
 - **Lexeme:** sequence of characters that corresponds to the pattern of a token (e.g. `123`, `if`, `"hola"`, `printf`).  
 - **Token:** Minimal unit recognized by the lexer (e.g., `int`, `+`, `x`, function names).
-- **Lexer:** Groups characters into tokens and passes them to the parser. Now includes function detection.
+- **Lexer:** Groups characters into tokens and passes them to the parser.
 - **Parser:** Analyzes the sequence of tokens and builds the AST, enforcing the grammar rules.
 - **AST (Abstract Syntax Tree):** Hierarchical representation of the program structure.
 - **Semantic Analysis:** Checks for type compatibility, variable declarations, function usage, and other context-sensitive rules.
 
 **Design in the current code:**
-The lexer is modular and can be replaced or adapted via `adapter_lexer.py`.
-- The parser is implemented as a recursive-descent, **predictive LL(1)** parser (lookahead = 1); the grammar has been adapted so productions can be chosen with a single token of lookahead (left recursion removed and factoring applied where necessary).
-- Predictive decisions rely on FIRST/FOLLOW reasoning (implemented implicitly in parsing routines via lookahead checks). Consider adding explicit FIRST/FOLLOW documentation for maintainability.
-- The AST is constructed using Python `@dataclass` definitions for clarity, easy extension, and straightforward serialization/transformation.
-- **Function analysis:** The lexer performs post-processing to identify function declarations (pattern: `type identifier (`) and function calls (pattern: `identifier (` not preceded by type keyword).
-- Semantic actions run during parsing when immediate information is available (e.g., simple type checks and basic declaration/use checks).
-- A final validation pass traverses the AST and symbol tables to perform global semantic checks (full type checking, symbol resolution, return/break validation, scope integrity, and warnings).
-- Error reporting uses token objects that carry position `(line, column)` for precise error location.
-- The current symbol table supports function tracking (declarations and calls) and can be extended to a scope stack for nested blocks.
-- The architecture is modular (lexer ↔ parser ↔ AST ↔ semantic passes ↔ optimizer/generator) so each stage can be replaced or extended independently.
-- `adapter_lexer.py` allows feeding different token sources (files, REPL, generated input) without changing parser/semantic code.
-- The design favors extensibility: adding new language constructs requires adding grammar rules and corresponding `@dataclass` AST nodes with minimal cross-cutting changes.
+- The lexer is modular and can be replaced or adapted via `adapter_lexer.py`.
+- The parser is implemented as a recursive-descent, **predictive LL(1)** parser (lookahead = 1).
+- The grammar has been adapted so productions can be chosen with a single token of lookahead (left recursion removed and factoring applied where necessary).
+- The AST is constructed using Python `@dataclass` definitions for clarity and easy extension.
+- **Two-pass parsing:**
+  1. **First pass:** Collects all function declarations before parsing function bodies.
+  2. **Second pass:** Full parsing with function call validation and semantic checks.
+- **Symbol table management:**
+  - Global `functions` table: stores function signatures `(return_type, params, is_variadic)`.
+  - Local `symbols` table: cleared for each function scope, stores local variables and parameters.
+- **Special function handling:**
+  - `printf()` and `scanf()` are treated as builtin variadic functions with custom validation rules.
+  - `printf()` requires at least 1 argument; additional arguments must be declared variables.
+  - `scanf()` requires at least 1 argument; all arguments must be declared variables.
+- **Type checking:**
+  - Performed during parsing via the `typeof()` method.
+  - Supports implicit `int` to `float` conversion.
+  - Validates binary operations, unary operations, and comparisons.
+- **Error handling:**
+  - `SyntaxError_` for parsing errors (unexpected tokens, missing delimiters, etc.).
+  - `SemanticError` for semantic errors (undeclared variables/functions, type mismatches, etc.).
+- The architecture is modular (lexer ↔ parser ↔ AST ↔ semantic checks) so each stage can be extended independently.
 
 ---
 
@@ -122,41 +131,66 @@ The lexer is modular and can be replaced or adapted via `adapter_lexer.py`.
   - **Literal:** `"([^"\\]|\\.)*" | \'([^\'\\]|\\.)*\'` (strings with escapes)
 
 - **Statements:**
-  - Variable declaration (with or without initialization)
-  - Function declaration/definition
-  - Function calls (with arguments)
-  - Assignment
-  - Expressions (arithmetic, logical, relational, etc.)
-  - Control structures (if, while, for)
+  - Variable declaration (with or without initialization): `int x;` or `int x = 5;`
+  - Function declaration/definition: `int add(int a, int b) { ... }`
+  - Function calls (with arguments): `printf("Hello");` or `add(3, 5);`
+  - Assignment: `x = 10;`
+  - Expressions (arithmetic, logical, relational): `x + y`, `a && b`, `x < 5`
+  - Return statements: `return x;`
+  - Code blocks: `{ ... }`
 
 ### Features
-- ✅ **Lexical Analysis:** Complete tokenization with error detection
-- ✅ **Function Detection:** Automatic identification of function declarations and calls
+- ✅ **Lexical Analysis:** Complete tokenization via `adapter_lexer.py`
+- ✅ **Two-pass Function Analysis:** First pass collects declarations, second pass validates calls
 - ✅ **Syntax Analysis:** LL(1) recursive descent parser
-- ✅ **Semantic Analysis:** Type checking and symbol validation
-- ✅ **Error Reporting:** Detailed error messages with line/column information
-- ✅ **Comment Support:** Single-line (`//`) and multi-line (`/* */`) comments
-- ✅ **String Literals:** Support for escaped characters in strings
+- ✅ **Semantic Analysis:** Type checking, symbol validation, and function argument validation
+- ✅ **Error Reporting:** Clear error messages indicating the type of error
+- ✅ **Builtin Functions:** Special handling for `printf()` and `scanf()`
+- ✅ **Type System:** Support for `int`, `float`, `string`, `bool` with implicit conversions
+- ✅ **Scope Management:** Proper function-local scopes with parameter handling
 
 ### Implementation 
 - **Main files:**
   - `main.py` — Core implementation of the parser, AST construction, and semantic analyzer.
   - `parser.py` — Runner / CLI wrapper that invokes `run(src: str)` from `main.py` (entry point for scripts or command-line use).
-  - `Lexer/lexer.py` — Main lexer implementation responsible for token generation and function detection.
-  - `Lexer/adapter_lexer.py` — Adapter that normalizes tokens from the customizable lexer to the parser's expected format.
-  - `Lexer/user_lexer.py` — Customizable lexer implementation that can be modified or replaced according to user needs.
+  - `lexer/adapter_lexer.py` — Adapter that normalizes tokens to the parser's expected format, using `tokenize_std` as the main interface.
+
+### AST Node Types
+The parser constructs an AST using the following node types:
+- `Program` — Root node containing all top-level items
+- `FuncDecl` — Function declaration with return type, name, parameters, and body
+- `Block` — Code block containing statements
+- `Return` — Return statement with optional expression
+- `FuncCall` — Function call with name and arguments
+- `ExprStmt` — Expression as a statement
+- `Decl` — Variable declaration with optional initialization
+- `Assign` — Variable assignment
+- `BinOp` — Binary operation (arithmetic, logical, relational)
+- `UnaryOp` — Unary operation (+, -)
+- `Var` — Variable reference
+- `Num` — Numeric literal
+- `String` — String literal
 
 ---
 
 ## Results
 The parser and semantic analyzer, with the current implementation, return:
-- Informative messages for successful parsing and semantic validation.
-- Detailed function analysis showing declarations and calls.
-- Error messages for syntax or semantic errors (type mismatches, undeclared variables, undefined functions, etc.).
-- Token statistics and grouping for debugging purposes.
-
----
-
+- **Successful parsing:**
+  ```
+  Parsing Success!
+  SDT Verified!
+  ```
+- **Syntax errors:**
+  ```
+  Parsing error...
+  <error message with token information>
+  ```
+- **Semantic errors:**
+  ```
+  Parsing Success!
+  SDT error...
+  <error message describing the semantic issue>
+  ```
 ## How to run
 
 ### Prerequisites
@@ -176,17 +210,11 @@ python parser.py <input_file>
 ```bash
 python parser.py
 ```
-
-### Run lexer standalone
- - To test only the lexical analyzer:
-
-```bash
-python Lexer/lexer.py <input_file>
-```
-
 ---
 
 ## Known Limitations & Future Work
-- Constructs needing >1 token of lookahead or inherently ambiguous grammar require grammar refactoring or using a different parser strategy (LL(k), LR, or GLR).
-- Improve recovery beyond simple panic-mode (more precise resynchronization and friendlier messages).
-- Add AST/table visualization tools and richer error suggestions for developers and users.
+- **No nested scopes:** Currently only supports function-level scopes, not block-level scopes within functions.
+- **Limited control flow:** `if`, `while`, `for` structures are not yet fully implemented in the parser.
+- **No arrays or pointers:** Complex data types not yet supported.
+- **Return validation:** Not all code paths are checked for return statements.
+- **Error recovery:** Basic error handling without sophisticated recovery strategies.
