@@ -12,16 +12,14 @@ from lexer.adapter_lexer import tokenize_std as lex
 @dataclass
 class Program:
     """Nodo raíz del programa que contiene todas las funciones y sentencias globales"""
-    items: list  # Puede contener FuncDecl, Decl, etc.
+    items: list
 
 @dataclass
 class FuncDecl:
-    """Declaración de función
-    Ejemplo: int main() { ... }
-    """
-    return_type: str  # 'int', 'void', 'float', etc.
+    """Declaración de función"""
+    return_type: str
     name: str
-    params: List[Tuple[str, str]]  # [(tipo, nombre), ...]
+    params: List[Tuple[str, str]]
     body: 'Block'
 
 @dataclass
@@ -31,22 +29,18 @@ class Block:
 
 @dataclass
 class Return:
-    """Statement de retorno
-    Ejemplo: return x;
-    """
-    expr: Optional[Any]  # None para 'return;'
+    """Statement de retorno"""
+    expr: Optional[Any]
 
 @dataclass
 class FuncCall:
-    """Llamada a función
-    Ejemplo: printf("hola");
-    """
+    """Llamada a función"""
     name: str
-    args: list  # Lista de expresiones
+    args: list
 
 @dataclass
 class ExprStmt:
-    """Statement que es solo una expresión (ej: llamada a función)"""
+    """Statement que es solo una expresión"""
     expr: Any
 
 @dataclass
@@ -103,19 +97,15 @@ class Parser:
         self.tokens = tokens
         self.i = 0
         self.current = self.tokens[self.i]
-        self.symbols = {}  # Tabla de símbolos: nombre -> tipo
-        self.functions = {}  # Tabla de funciones: nombre -> (return_type, params)
-        self.current_function_return_type = None  # Para validar returns
-        self.scope_stack = []  # Pila de scopes para manejo correcto
-        
-        # Funciones predefinidas (stdlib de C)
+        self.symbols = {}
+        self.functions = {}
+        self.current_function_return_type = None
         self._init_builtin_functions()
 
     def _init_builtin_functions(self):
         """Inicializa funciones predefinidas como printf, scanf"""
-        # printf y scanf son funciones especiales que se validan de forma customizada
-        self.functions['printf'] = ('int', [], True)  # variadic
-        self.functions['scanf'] = ('int', [], True)  # variadic
+        self.functions['printf'] = ('int', [], True)
+        self.functions['scanf'] = ('int', [], True)
 
     def _advance(self):
         """Avanza al siguiente token"""
@@ -135,16 +125,10 @@ class Parser:
             return tok
         raise SyntaxError_(f"{msg} (got {self.current.type} '{self.current.lexeme}')")
 
-    # ============= GRAMÁTICA EXTENDIDA =============
-    
     def parse(self) -> Program:
         """program → (func_decl | stmt)* EOF"""
         items = []
-        
-        # Primera pasada: recolectar todas las declaraciones de funciones
         self._collect_function_declarations()
-        
-        # Segunda pasada: parsear completamente
         self.i = 0
         self.current = self.tokens[self.i]
         
@@ -159,26 +143,20 @@ class Parser:
         
         while not self._check("EOF"):
             if self._is_function_declaration():
-                # Extraer información básica de la función sin parsear el cuerpo
-                self.i += 0  # tipo
                 ret_type = self.current.lexeme if self._check('ID') else 'int'
                 self._advance()
                 
-                name = self.current.lexeme  # nombre
+                name = self.current.lexeme
                 self._advance()
-                
                 self._advance()  # LPAREN
                 
-                # Parsear parámetros sin agregar a symbols
                 params = []
                 if not self._check('RPAREN'):
                     params = self._collect_params()
                 
-                # Registrar función si no existe
                 if name not in self.functions:
-                    self.functions[name] = (ret_type, params, False)  # no variadic
+                    self.functions[name] = (ret_type, params, False)
                 
-                # Saltar el resto (hasta encontrar la función completa)
                 brace_count = 0
                 while not self._check('EOF'):
                     if self._check('LBRACE'):
@@ -187,7 +165,6 @@ class Parser:
                         break
                     self._advance()
                 
-                # Saltar el cuerpo de la función
                 while brace_count > 0 and not self._check('EOF'):
                     if self._check('LBRACE'):
                         brace_count += 1
@@ -195,13 +172,11 @@ class Parser:
                         brace_count -= 1
                     self._advance()
             else:
-                # Saltar statements hasta el siguiente ;
                 while not self._check('SEMI') and not self._check('EOF'):
                     self._advance()
                 if self._check('SEMI'):
                     self._advance()
         
-        # Restaurar posición
         self.i = saved_i
         self.current = saved_current
 
@@ -209,7 +184,6 @@ class Parser:
         """Recolecta parámetros sin modificar tabla de símbolos"""
         params = []
         
-        # Primer parámetro
         if self._check('INT'):
             ptype = 'int'
         elif self._check('ID'):
@@ -223,7 +197,6 @@ class Parser:
             self._advance()
             params.append((ptype, pname))
         
-        # Parámetros adicionales
         while self._check('COMMA'):
             self._advance()
             if self._check('INT'):
@@ -242,7 +215,7 @@ class Parser:
         return params
 
     def top_level(self):
-        """Parsea declaraciones de nivel superior (funciones o variables globales)"""
+        """Parsea declaraciones de nivel superior"""
         if self._is_function_declaration():
             return self.func_decl()
         else:
@@ -265,7 +238,6 @@ class Parser:
 
     def func_decl(self) -> FuncDecl:
         """func_decl → type ID '(' params? ')' block"""
-        # Tipo de retorno
         if self._check('INT'):
             ret_type = 'int'
             self._advance()
@@ -275,26 +247,20 @@ class Parser:
         else:
             raise SyntaxError_("Se esperaba un tipo de retorno")
 
-        # Nombre de función
         name_tok = self._consume('ID', "Se esperaba nombre de función")
         name = name_tok.lexeme
         
-        # CREAR NUEVO SCOPE LIMPIO para la función
         self.symbols = {}
         
-        # Parámetros
         self._consume('LPAREN', "Se esperaba '(' después del nombre de función")
         params = self.params() if not self._check('RPAREN') else []
         self._consume('RPAREN', "Se esperaba ')'")
 
-        # Guardar tipo de retorno actual para validar returns
         prev_return_type = self.current_function_return_type
         self.current_function_return_type = ret_type
 
-        # Cuerpo
         body = self.block()
 
-        # Limpiar scope de la función
         self.symbols = {}
         self.current_function_return_type = prev_return_type
 
@@ -323,7 +289,6 @@ class Parser:
         name_tok = self._consume('ID', "Se esperaba nombre de parámetro")
         pname = name_tok.lexeme
         
-        # Agregar parámetro a tabla de símbolos local
         self.symbols[pname] = ptype
         
         return (ptype, pname)
@@ -466,7 +431,6 @@ class Parser:
         name_tok = self._consume('ID', "Se esperaba nombre de función")
         name = name_tok.lexeme
         
-        # VALIDACIÓN 1: Verificar que la función esté declarada
         if name not in self.functions:
             raise SemanticError(f"Función '{name}' no declarada")
         
@@ -474,43 +438,35 @@ class Parser:
         args = self.args() if not self._check('RPAREN') else []
         self._consume('RPAREN', "Se esperaba ')'")
         
-        # VALIDACIÓN 2: Verificar cantidad y tipo de argumentos
         func_info = self.functions[name]
-        return_type = func_info[0]
         expected_params = func_info[1]
         is_variadic = func_info[2] if len(func_info) > 2 else False
         
-        # Validación especial para printf
         if name == 'printf':
             if len(args) == 0:
                 raise SemanticError("printf requiere al menos 1 argumento")
             
-            # Si solo tiene 1 argumento: puede ser string o variable
             if len(args) == 1:
                 arg_type = self.typeof(args[0])
                 if isinstance(args[0], Var) and args[0].name not in self.symbols:
                     raise SemanticError(f"printf: variable '{args[0].name}' no declarada")
             else:
-                
                 for i, arg in enumerate(args[1:], start=2):
                     if not isinstance(arg, Var):
                         raise SemanticError(f"printf: argumento {i} debe ser una variable")
                     if arg.name not in self.symbols:
                         raise SemanticError(f"printf: variable '{arg.name}' no declarada")
         
-        # Validación especial para scanf
         elif name == 'scanf':
             if len(args) == 0:
                 raise SemanticError("scanf requiere al menos 1 argumento")
             
-            # Todos los argumentos deben ser variables declaradas
             for i, arg in enumerate(args, start=1):
                 if not isinstance(arg, Var):
                     raise SemanticError(f"scanf: argumento {i} debe ser una variable")
                 if arg.name not in self.symbols:
                     raise SemanticError(f"scanf: variable '{arg.name}' no declarada")
         
-        # Validación para otras funciones
         elif not is_variadic:
             if len(args) != len(expected_params):
                 raise SemanticError(
@@ -541,8 +497,6 @@ class Parser:
             self._advance()
             result.append(self.logical_or())
         return result
-
-    # ============= EXPRESIONES =============
 
     def factor(self):
         """factor → ('+'|'-') factor | NUM | STRING | ID ('(' args? ')')? | '(' expr ')'"""
@@ -642,8 +596,6 @@ class Parser:
             left = BinOp(left, op, right)
         return left
 
-    # ============= ANÁLISIS SEMÁNTICO =============
-
     def typeof(self, node) -> str:
         """Determina el tipo de una expresión del AST"""
         if isinstance(node, Num):
@@ -721,20 +673,3 @@ def run(src: str):
 
     print("Parsing Success!")
     print("SDT Verified!")
-
-# Método auxiliar para validar bloques recursivamente
-def _validate_block(self, block: Block):
-    """Valida tipos en un bloque de código"""
-    for st in block.statements:
-        if isinstance(st, Block):
-            self._validate_block(st)
-        elif isinstance(st, Decl) and st.init is not None:
-            _ = self.typeof(st.init)
-        elif isinstance(st, Assign):
-            _ = self.typeof(st.expr)
-        elif isinstance(st, Return) and st.expr is not None:
-            _ = self.typeof(st.expr)
-        elif isinstance(st, ExprStmt):
-            _ = self.typeof(st.expr)
-
-Parser._validate_block = _validate_block
