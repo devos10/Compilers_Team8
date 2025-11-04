@@ -123,7 +123,7 @@ Understanding function declarations and calls is crucial for:
 
 ### Design Considerations
 - **Grammar:**
-  - **Keywords:** `int | float | for | while | if | else | return | void | char | double | long | short | unsigned | signed | struct | typedef`
+  - **Keywords:** `int | bool | float | string | void | for | while | if | else | return`
   - **Identifier:** `[A-Za-z_]\w*` (includes variable names and function names)
   - **Punctuation:** `., (, ), {, }, ;, ,`
   - **Operator:** `== | != | <= | >= | \+\+ | -- | \+= | -= | \*= | /= | %= | && | \|\| | [+\-*/%<>=!&|]`
@@ -153,7 +153,7 @@ Understanding function declarations and calls is crucial for:
 - **Main files:**
   - `main.py` — Core implementation of the parser, AST construction, and semantic analyzer.
   - `parser.py` — Runner / CLI wrapper that invokes `run(src: str)` from `main.py` (entry point for scripts or command-line use).
-  - `lexer/adapter_lexer.py` — Adapter that normalizes tokens to the parser's expected format, using `tokenize_std` as the main interface.
+  - `lexer/adapter_lexer.py` — Adapter that normalizes tokens to the parser’s expected format, using user_lexer (which wraps tokenize_std) as its main interface.
 
 ### AST Node Types
 The parser constructs an AST using the following node types:
