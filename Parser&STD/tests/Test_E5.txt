@@ -1,0 +1,9 @@
+//BOOLEANOS, COMPARACIONES Y OPERADORES
+int main() {
+    int x = 10;
+    int y = 20;
+    bool mayor = x > y;
+    bool igual = x == y;
+    bool resultado = mayor && igual;
+    bool otro = mayor || igual;
+    return 0;

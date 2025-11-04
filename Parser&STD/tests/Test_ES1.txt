@@ -1,0 +1,5 @@
+//VARIABLE NO DECLARADA
+int main() {
+    x = 10;
+    return 0;
+}
