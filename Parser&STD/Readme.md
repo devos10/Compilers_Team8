@@ -1,4 +1,4 @@
-<h1 align="center">
+<img width="1600" height="1002" alt="image" src="https://github.com/user-attachments/assets/3668b0dc-2163-4b5d-97c2-5314f790cfce" /><h1 align="center">
   <img src="https://github.com/user-attachments/assets/3abebde3-8ee0-40d0-ae38-82c52246b528" width="60" height="60" />
   Project: Parser & SDT
   <img src="https://github.com/user-attachments/assets/fe29e172-7262-4289-820a-1c08eecaa61b" width="60" height="60" />
@@ -123,7 +123,7 @@ Understanding function declarations and calls is crucial for:
 
 ### Design Considerations
 - **Grammar:**
-  - **Keywords:** `int | float | for | while | if | else | return | void | char | double | long | short | unsigned | signed | struct | typedef`
+  - **Keywords:** `int | bool | float | string | void | for | while | if | else | return`
   - **Identifier:** `[A-Za-z_]\w*` (includes variable names and function names)
   - **Punctuation:** `., (, ), {, }, ;, ,`
   - **Operator:** `== | != | <= | >= | \+\+ | -- | \+= | -= | \*= | /= | %= | && | \|\| | [+\-*/%<>=!&|]`
