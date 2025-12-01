@@ -88,31 +88,45 @@ class AsmGenerator:
     
     def visit(self, instr: IRInstr):
         """Visita una instrucción IR y genera código ASM"""
-        if isinstance(instr, IRFuncBegin):
-            self.visit_func_begin(instr)
-        elif isinstance(instr, IRFuncEnd):
-            self.visit_func_end(instr)
-        elif isinstance(instr, IRLabel):
-            self.visit_label(instr)
-        elif isinstance(instr, IRAssign):
-            self.visit_assign(instr)
-        elif isinstance(instr, IRBinOp):
-            self.visit_binop(instr)
-        elif isinstance(instr, IRUnaryOp):
-            self.visit_unaryop(instr)
-        elif isinstance(instr, IRGoto):
-            self.visit_goto(instr)
-        elif isinstance(instr, IRIfGoto):
-            self.visit_if_goto(instr)
-        elif isinstance(instr, IRIfFalseGoto):
-            self.visit_if_false_goto(instr)
-        elif isinstance(instr, IRParam):
-            pass  # Los parámetros se manejan en IRCall
-        elif isinstance(instr, IRCall):
-            self.visit_call(instr)
-        elif isinstance(instr, IRReturn):
-            self.visit_return(instr)
+        match instr:
+            case IRFuncBegin():
+                self.visit_func_begin(instr)
+            case IRFuncEnd():
+                self.visit_func_end(instr)
+            case IRLabel():
+                self.visit_label(instr)
+            case IRAssign():
+                self.visit_assign(instr)
+            case IRBinOp():
+                self.visit_binop(instr)
+            case IRUnaryOp():
+                self.visit_unaryop(instr)
+            case IRGoto():
+                self.visit_goto(instr)
+            case IRIfGoto():
+                self.visit_if_goto(instr)
+            case IRIfFalseGoto():
+                self.visit_if_false_goto(instr)
+            case IRParam():
+                pass  # Los parámetros se manejan en IRCall
+            case IRCall():
+                self.visit_call(instr)
+            case IRReturn():
+                self.visit_return(instr)
     
+    def get_var_location(self, var: str) -> str:
+        """Retorna la ubicación de una variable (registro o memoria)"""
+        # Si es un número literal
+        if var.isdigit() or (var.startswith('-') and var[1:].isdigit()):
+            return var
+        
+        # Si es una variable/temporal
+        if var not in self.var_offset:
+            self.current_offset += 8
+            self.var_offset[var] = self.current_offset
+        
+        return f"QWORD [rbp-{self.var_offset[var]}]"    
+
     def visit_func_begin(self, instr: IRFuncBegin):
         """Genera prólogo de función"""
         self.in_function = True
@@ -147,19 +161,6 @@ class AsmGenerator:
     def visit_label(self, instr: IRLabel):
         """Emite una etiqueta"""
         self.emit(f".{instr.name}:")
-    
-    def get_var_location(self, var: str) -> str:
-        """Retorna la ubicación de una variable (registro o memoria)"""
-        # Si es un número literal
-        if var.isdigit() or (var.startswith('-') and var[1:].isdigit()):
-            return var
-        
-        # Si es una variable/temporal
-        if var not in self.var_offset:
-            self.current_offset += 8
-            self.var_offset[var] = self.current_offset
-        
-        return f"QWORD [rbp-{self.var_offset[var]}]"
     
     def visit_assign(self, instr: IRAssign):
         """dest = src"""
@@ -196,34 +197,36 @@ class AsmGenerator:
             self.emit(f"    mov rbx, {right_loc}")
         
         # Realizar operación
-        if instr.op == '+':
-            self.emit(f"    add rax, rbx")
-        elif instr.op == '-':
-            self.emit(f"    sub rax, rbx")
-        elif instr.op == '*':
-            self.emit(f"    imul rax, rbx")
-        elif instr.op == '/':
-            self.emit(f"    xor rdx, rdx")
-            self.emit(f"    idiv rbx")
-        elif instr.op == '%':
-            self.emit(f"    xor rdx, rdx")
-            self.emit(f"    idiv rbx")
-            self.emit(f"    mov rax, rdx")
-        elif instr.op in ['<', '>', '<=', '>=', '==', '!=']:
-            self.emit(f"    cmp rax, rbx")
-            if instr.op == '<':
-                self.emit(f"    setl al")
-            elif instr.op == '>':
-                self.emit(f"    setg al")
-            elif instr.op == '<=':
-                self.emit(f"    setle al")
-            elif instr.op == '>=':
-                self.emit(f"    setge al")
-            elif instr.op == '==':
-                self.emit(f"    sete al")
-            elif instr.op == '!=':
-                self.emit(f"    setne al")
-            self.emit(f"    movzx rax, al")
+        match instr.op:
+            case '+':
+                self.emit(f"    add rax, rbx")
+            case '-':
+                self.emit(f"    sub rax, rbx")
+            case '*':
+                self.emit(f"    imul rax, rbx")
+            case '/':
+                self.emit(f"    xor rdx, rdx")
+                self.emit(f"    idiv rbx")
+            case '%':
+                self.emit(f"    xor rdx, rdx")
+                self.emit(f"    idiv rbx")
+                self.emit(f"    mov rax, rdx")
+            case '<' | '>' | '<=' | '>=' | '==' | '!=':
+                self.emit(f"    cmp rax, rbx")
+                match instr.op:
+                    case '<':
+                        self.emit(f"    setl al")
+                    case '>':
+                        self.emit(f"    setg al")
+                    case '<=':
+                        self.emit(f"    setle al")
+                    case '>=':
+                        self.emit(f"    setge al")
+                    case '==':
+                        self.emit(f"    sete al")
+                    case '!=':
+                        self.emit(f"    setne al")
+                self.emit(f"    movzx rax, al")
         
         # Guardar resultado
         self.emit(f"    mov {dest_loc}, rax")

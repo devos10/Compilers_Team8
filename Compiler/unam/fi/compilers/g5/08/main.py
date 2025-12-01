@@ -25,15 +25,7 @@ from pathlib import Path
 
 def compile_file(input_file: str, output_name: str = None, show_ir: bool = False, 
                  show_asm: bool = False, asm_only: bool = False):
-    """Compila un archivo fuente completo
-    
-    Args:
-        input_file: Ruta al archivo de código fuente
-        output_name: Nombre del ejecutable de salida (sin extensión)
-        show_ir: Mostrar código intermedio
-        show_asm: Mostrar código ensamblador
-        asm_only: Solo generar .asm, no ensamblar
-    """
+
     # Leer archivo fuente
     try:
         with open(input_file, "r", encoding="utf-8") as f:
