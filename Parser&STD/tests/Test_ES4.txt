@@ -1,0 +1,5 @@
+//RETURN INCORRECTO
+int main() {
+    string mensaje = "error";
+    return mensaje;
+}

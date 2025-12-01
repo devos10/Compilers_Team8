@@ -1,0 +1,10 @@
+//FUNCION VOID DECLARADA
+void saludar() {
+    printf("Hola Mundo");
+    return;
+}
+
+int main() {
+    saludar();
+    return 0;
+}
