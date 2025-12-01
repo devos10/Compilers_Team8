@@ -1,4 +1,0 @@
-//FALTA LLAVE DE CIERRE
-int main() {
-    int x = 10;
-    return x;
