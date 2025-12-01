@@ -1,0 +1,23 @@
+# Ignorar archivos y carpetas generados automáticamente
+_pycache_/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.bak
+.DS_Store
+*.log
+*.tmp
+# Ignorar archivos de entorno virtual
+venv/
+.env/
+# Ignorar archivos de salida y empaquetado
+*.zip
+*.tar.gz
+*.egg-info/
+# Ignorar archivos temporales de editores
+.idea/
+.vscode/
+# Ignorar archivos de entrada/salida temporales
+/tmp_input.txt
