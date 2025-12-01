@@ -83,6 +83,27 @@ class UnaryOp:
     op: str
     expr: Any
 
+@dataclass
+class IfStmt:
+    """Statement condicional if-else"""
+    condition: Any
+    then_block: 'Block'
+    else_block: Optional['Block']
+
+@dataclass
+class WhileStmt:
+    """Statement de ciclo while"""
+    condition: Any
+    body: 'Block'
+
+@dataclass
+class ForStmt:
+    """Statement de ciclo for"""
+    init: Any
+    condition: Any
+    step: Any
+    body: 'Block'
+
 # ======= Excepciones =======
 class SyntaxError_(Exception):
     pass
@@ -308,12 +329,21 @@ class Parser:
         return Block(stmts)
 
     def stmt(self):
-        """stmt → decl | assign | return_stmt | expr_stmt | block"""
+        """stmt → decl | assign | return_stmt | if_stmt | while_stmt | for_stmt | expr_stmt | block"""
         if self._check('RETURN') or (self._check('ID') and self.current.lexeme == 'return'):
             return self.return_stmt()
         
         if self._check('LBRACE'):
             return self.block()
+        
+        # Estructuras de control
+        if self._check('ID'):
+            if self.current.lexeme == 'if':
+                return self.if_stmt()
+            elif self.current.lexeme == 'while':
+                return self.while_stmt()
+            elif self.current.lexeme == 'for':
+                return self.for_stmt()
         
         if self._check("INT"):
             return self.decl()
@@ -361,6 +391,91 @@ class Parser:
         
         return Return(expr)
 
+    def if_stmt(self):
+        """if_stmt → 'if' '(' condition ')' '{' block '}' ('else' '{' block '}')?"""        
+        if not (self._check('ID') and self.current.lexeme == 'if'):
+            raise SyntaxError_("Se esperaba 'if'")
+        self._advance()
+        
+        self._consume('LPAREN', "Se esperaba '(' después de 'if'")
+        condition = self.logical_or()
+        self._consume('RPAREN', "Se esperaba ')' después de la condición")
+        
+        # Validar que la condición sea válida (tipo booleano o numérico)
+        cond_type = self.typeof(condition)
+        if cond_type not in ('bool', 'int', 'float'):
+            raise SemanticError(f"Condición de 'if' debe ser booleana o numérica, se obtuvo {cond_type}")
+        
+        then_block = self.block()
+        
+        else_block = None
+        if self._check('ID') and self.current.lexeme == 'else':
+            self._advance()
+            else_block = self.block()
+        
+        return IfStmt(condition, then_block, else_block)
+
+    def while_stmt(self):
+        """while_stmt → 'while' '(' condition ')' '{' block '}'"""        
+        if not (self._check('ID') and self.current.lexeme == 'while'):
+            raise SyntaxError_("Se esperaba 'while'")
+        self._advance()
+        
+        self._consume('LPAREN', "Se esperaba '(' después de 'while'")
+        condition = self.logical_or()
+        self._consume('RPAREN', "Se esperaba ')' después de la condición")
+        
+        # Validar que la condición sea válida
+        cond_type = self.typeof(condition)
+        if cond_type not in ('bool', 'int', 'float'):
+            raise SemanticError(f"Condición de 'while' debe ser booleana o numérica, se obtuvo {cond_type}")
+        
+        body = self.block()
+        
+        return WhileStmt(condition, body)
+
+    def for_stmt(self):
+        """for_stmt → 'for' '(' init ';' condition ';' step ')' '{' block '}'"""        
+        if not (self._check('ID') and self.current.lexeme == 'for'):
+            raise SyntaxError_("Se esperaba 'for'")
+        self._advance()
+        
+        self._consume('LPAREN', "Se esperaba '(' después de 'for'")
+        
+        # Inicialización (puede ser declaración o asignación)
+        if self._check('INT'):
+            init = self.decl_without_semi()
+        elif self._check('ID'):
+            # Verificar si es declaración con tipo o asignación
+            nxt = self.tokens[self.i+1] if self.i+1 < len(self.tokens) else None
+            if nxt and nxt.type == 'ID':
+                init = self.decl_with_type_without_semi()
+            elif nxt and nxt.type == 'ASSIGN':
+                init = self.assign_without_semi()
+            else:
+                raise SyntaxError_("Se esperaba declaración o asignación en inicialización de for")
+        else:
+            raise SyntaxError_("Se esperaba declaración o asignación en inicialización de for")
+        
+        self._consume('SEMI', "Se esperaba ';' después de la inicialización")
+        
+        # Condición
+        condition = self.logical_or()
+        cond_type = self.typeof(condition)
+        if cond_type not in ('bool', 'int', 'float'):
+            raise SemanticError(f"Condición de 'for' debe ser booleana o numérica, se obtuvo {cond_type}")
+        
+        self._consume('SEMI', "Se esperaba ';' después de la condición")
+        
+        # Paso (incremento/decremento)
+        step = self.assign_without_semi()
+        
+        self._consume('RPAREN', "Se esperaba ')' después del paso")
+        
+        body = self.block()
+        
+        return ForStmt(init, condition, step, body)
+
     def decl(self):
         """decl → 'int' ID ('=' expr)? ';'"""
         self._consume("INT", "Se esperaba 'int'")
@@ -375,6 +490,29 @@ class Parser:
             self._advance()
             init_expr = self.logical_or()
         self._consume("SEMI", "Falta ';' al final de la declaración")
+
+        self.symbols[name] = 'int'
+
+        if init_expr is not None:
+            t = self.typeof(init_expr)
+            if t != 'int':
+                raise SemanticError(f"Tipo incompatible en inicialización de '{name}': {t}")
+
+        return Decl(name, init_expr)
+
+    def decl_without_semi(self):
+        """decl → 'int' ID ('=' expr)? (sin punto y coma)"""        
+        self._consume("INT", "Se esperaba 'int'")
+        name_tok = self._consume("ID", "Se esperaba un identificador")
+        name = name_tok.lexeme
+        
+        if name in self.symbols:
+            raise SemanticError(f"Variable '{name}' ya declarada")
+        
+        init_expr = None
+        if self._check("ASSIGN"):
+            self._advance()
+            init_expr = self.logical_or()
 
         self.symbols[name] = 'int'
 
@@ -402,6 +540,22 @@ class Parser:
                 raise SemanticError(f"Tipo incompatible en asignación a '{name}': se esperaba {expected_type}, se obtuvo {t}")
         return Assign(name, e)
 
+    def assign_without_semi(self):
+        """assign → ID '=' expr (sin punto y coma)"""        
+        name_tok = self._consume("ID", "Se esperaba un identificador")
+        self._consume("ASSIGN", "Se esperaba '='")
+        e = self.logical_or()
+
+        name = name_tok.lexeme
+        if name not in self.symbols:
+            raise SemanticError(f"Variable '{name}' no declarada")
+        t = self.typeof(e)
+        expected_type = self.symbols[name]
+        if t != expected_type:
+            if not (t == 'int' and expected_type == 'float'):
+                raise SemanticError(f"Tipo incompatible en asignación a '{name}': se esperaba {expected_type}, se obtuvo {t}")
+        return Assign(name, e)
+
     def decl_with_type(self):
         """decl_with_type → ID ID ('=' expr)? ';'"""
         type_tok = self._consume('ID', "Se esperaba un tipo")
@@ -411,6 +565,29 @@ class Parser:
             self._advance()
             init_expr = self.logical_or()
         self._consume('SEMI', "Falta ';' al final de la declaración")
+
+        type_name = type_tok.lexeme
+        name = name_tok.lexeme
+        if name in self.symbols:
+            raise SemanticError(f"Variable '{name}' ya declarada")
+        self.symbols[name] = type_name
+
+        if init_expr is not None:
+            t = self.typeof(init_expr)
+            if t != type_name:
+                if not (t == 'int' and type_name == 'float'):
+                    raise SemanticError(f"Tipo incompatible en inicialización de '{name}': {t}")
+
+        return Decl(name, init_expr)
+
+    def decl_with_type_without_semi(self):
+        """decl_with_type → ID ID ('=' expr)? (sin punto y coma)"""        
+        type_tok = self._consume('ID', "Se esperaba un tipo")
+        name_tok = self._consume('ID', "Se esperaba un identificador")
+        init_expr = None
+        if self._check('ASSIGN'):
+            self._advance()
+            init_expr = self.logical_or()
 
         type_name = type_tok.lexeme
         name = name_tok.lexeme

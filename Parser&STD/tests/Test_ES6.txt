@@ -1,7 +1,0 @@
-//OPERACION INCOMPATIBLE
-int main() {
-    int x = 10;
-    string y = "hola";
-    int z = x + y;
-    return z;
-}

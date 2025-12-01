@@ -1,7 +1,0 @@
-//CONCATENACION
-int main() {
-    string nombre = "Juan";
-    string apellido = "Perez";
-    string completo = nombre + apellido;
-    return 0;
-}

@@ -1,8 +1,0 @@
-//ASIGNACION COMPUESTA
-int main() {
-    int x = 10;
-    int y = 20;
-    x = x + y * 2;
-    printf("El valor de x es: ", x);
-    return 0;
-}
