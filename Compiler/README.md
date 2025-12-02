@@ -30,10 +30,10 @@ This project implements a **full-fledged compiler** in Python that transforms C-
 ### Problem Statement
 A compiler is a program that translates source code written in a high-level language into machine-executable instructions. The problem addressed in this project is the design and implementation of a complete compiler capable of processing C-like source code and generating Windows x86-64 executable files. This requires building a full compilation pipeline that includes lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and finally assembly and linking to produce a runnable program.
 
-## Motivation 
+### Motivation 
 Developing a compiler provides a practical way to apply the theoretical concepts studied in the course, such as formal languages, parsing techniques, and program translation. Implementing each phase of the compilation process makes it possible to understand how source code is transformed from a human-readable form into machine code. This project strengthens the understanding of programming language design, improves problem-solving and software engineering skills, and offers direct experience with the internal workings of compilers and modern computing systems.
 
-## Objectives 
+### Objectives 
 - To implement a functional compiler capable of translating C-like source code into Windows x86-64 executable files (.exe).
 
 - To develop all required phases of the compilation process: lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and assembly/linking.
@@ -95,3 +95,11 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - *NASM* assembles .asm files to .obj object files (PE/COFF format).
 - *GCC* links object files with C runtime library to produce .exe executables.
 - Error handling at each phase with informative messages and installation instructions for external tools.
+
+## Conclusion 
+
+The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
+
+Additionally, the implementation confirms the relevance of using intermediate representations such as three-address code to simplify translation and maintain a clear flow of information across stages. Proper symbol management, semantic verification, and control-flow organization illustrate how theoretical concepts ensure that each transformation preserves the integrity of the original program.
+
+Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
