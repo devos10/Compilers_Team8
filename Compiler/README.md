@@ -348,17 +348,10 @@ The input code passed the first stage correctly, but in the next phase a syntax 
 
 <img width="500" height="169" alt="image" src="https://github.com/user-attachments/assets/8496bd80-058b-4ff2-aaa8-b278916bbe50" />
 
-## 5. Conclusion 
 
-The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
+## 5. Known Limitations & Future Work
 
-Additionally, the implementation confirms the relevance of using intermediate representations such as three-address code to simplify translation and maintain a clear flow of information across stages. Proper symbol management, semantic verification, and control-flow organization illustrate how theoretical concepts ensure that each transformation preserves the integrity of the original program.
-
-Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
-
-## 6. Known Limitations & Future Work
-
-**6.1 Current limitations:**
+**5.1 Current limitations:**
 - **No optimizations:** Generated code is not optimized (no dead code elimination, constant folding, register allocation, etc.).
 - **Simple register usage:** Only RAX and RBX used for operations; no sophisticated register allocation.
 - **Fixed stack allocation:** Functions reserve 64 bytes regardless of actual variable count.
@@ -367,7 +360,7 @@ Overall, the project reinforces that compiler theory not only provides the conce
 - **No error recovery:** Compilation stops at first error in any phase.
 - **Windows-only:** Currently targets Windows x64; Linux/Mac support would require different calling convention and linker.
 
-**6.2 Future improvements:**
+**5.2 Future improvements:**
 - **Code optimization:** Constant propagation, dead code elimination, common subexpression elimination.
 - **Register allocation:** Use more registers to reduce memory accesses.
 - **Dynamic stack allocation:** Calculate exact stack space needed per function.
@@ -376,8 +369,8 @@ Overall, the project reinforces that compiler theory not only provides the conce
 - **Better error recovery:** Continue compilation after errors to report multiple issues.
 - **Debugging support:** Generate debug symbols for GDB/LLDB.
 
-## 7. How to run
-### 7.1 Prerequisites
+## 6. How to run
+### 6.1 Prerequisites
 - **Python 3.10 or higher** (for match-case syntax)
 - **NASM** (Netwide Assembler)
   - Download: https://www.nasm.us/
@@ -386,14 +379,14 @@ Overall, the project reinforces that compiler theory not only provides the conce
   - Download: https://winlibs.com/
   - Install and add to PATH
 
-### 7.2 Verify installations:
+### 6.2 Verify installations:
 ```bash
 python --version    # Should be 3.10+
 nasm -v             # Should show NASM version
 gcc --version       # Should show GCC version
 ```
 
-### 7.3 Run with a file as argument (default)
+### 6.3 Run with a file as argument (default)
 If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
 If the file is in another folder, you must pass the relative or absolute path.
 
@@ -435,6 +428,13 @@ After successful compilation:
 ```bash
 .\programa.exe
 ```
+## 7. Conclusion 
+
+The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
+
+Additionally, the implementation confirms the relevance of using intermediate representations such as three-address code to simplify translation and maintain a clear flow of information across stages. Proper symbol management, semantic verification, and control-flow organization illustrate how theoretical concepts ensure that each transformation preserves the integrity of the original program.
+
+Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
 
 ---
 ## 8. References 
