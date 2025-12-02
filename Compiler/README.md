@@ -423,7 +423,7 @@ This produces `programa.asm` and stops before assembly/linking.
 python main.py programa.c --show-ir --show-asm -o resultado
 ```
 
-### Run the compiled executable:
+### 6.4 Run the compiled executable:
 After successful compilation:
 ```bash
 .\programa.exe
