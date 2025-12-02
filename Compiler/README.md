@@ -172,9 +172,28 @@ Additionally, the implementation confirms the relevance of using intermediate re
 
 Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
 
-## 6. How to run
+## 6. Known Limitations & Future Work
 
-### 6.1 Prerequisites
+**6.1 Current limitations:**
+- **No optimizations:** Generated code is not optimized (no dead code elimination, constant folding, register allocation, etc.).
+- **Simple register usage:** Only RAX and RBX used for operations; no sophisticated register allocation.
+- **Fixed stack allocation:** Functions reserve 64 bytes regardless of actual variable count.
+- **No array support:** Arrays and pointers not yet implemented.
+- **Limited control flow:** While `if`, `while`, `for` are supported in IR, complex nested structures may need testing.
+- **No error recovery:** Compilation stops at first error in any phase.
+- **Windows-only:** Currently targets Windows x64; Linux/Mac support would require different calling convention and linker.
+
+**6.2 Future improvements:**
+- **Code optimization:** Constant propagation, dead code elimination, common subexpression elimination.
+- **Register allocation:** Use more registers to reduce memory accesses.
+- **Dynamic stack allocation:** Calculate exact stack space needed per function.
+- **Cross-platform support:** Generate assembly for Linux (System V ABI) and macOS.
+- **Advanced features:** Arrays, pointers, structs, global variables.
+- **Better error recovery:** Continue compilation after errors to report multiple issues.
+- **Debugging support:** Generate debug symbols for GDB/LLDB.
+
+## 7. How to run
+### 7.1 Prerequisites
 - **Python 3.10 or higher** (for match-case syntax)
 - **NASM** (Netwide Assembler)
   - Download: https://www.nasm.us/
@@ -183,14 +202,14 @@ Overall, the project reinforces that compiler theory not only provides the conce
   - Download: https://winlibs.com/
   - Install and add to PATH
 
-### 6.2 Verify installations:
+### 7.2 Verify installations:
 ```bash
 python --version    # Should be 3.10+
 nasm -v             # Should show NASM version
 gcc --version       # Should show GCC version
 ```
 
-### 6.3 Run with a file as argument (default)
+### 7.3 Run with a file as argument (default)
 If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
 If the file is in another folder, you must pass the relative or absolute path.
 
@@ -234,29 +253,6 @@ After successful compilation:
 ```
 
 ---
-
-## 7. Known Limitations & Future Work
-
-**Current limitations:**
-- **No optimizations:** Generated code is not optimized (no dead code elimination, constant folding, register allocation, etc.).
-- **Simple register usage:** Only RAX and RBX used for operations; no sophisticated register allocation.
-- **Fixed stack allocation:** Functions reserve 64 bytes regardless of actual variable count.
-- **No array support:** Arrays and pointers not yet implemented.
-- **Limited control flow:** While `if`, `while`, `for` are supported in IR, complex nested structures may need testing.
-- **No error recovery:** Compilation stops at first error in any phase.
-- **Windows-only:** Currently targets Windows x64; Linux/Mac support would require different calling convention and linker.
-
-**Future improvements:**
-- **Code optimization:** Constant propagation, dead code elimination, common subexpression elimination.
-- **Register allocation:** Use more registers to reduce memory accesses.
-- **Dynamic stack allocation:** Calculate exact stack space needed per function.
-- **Cross-platform support:** Generate assembly for Linux (System V ABI) and macOS.
-- **Advanced features:** Arrays, pointers, structs, global variables.
-- **Better error recovery:** Continue compilation after errors to report multiple issues.
-- **Debugging support:** Generate debug symbols for GDB/LLDB.
-
-
-
 ## 8. References 
 1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, *Compilers: Principles, Techniques, and Tools*, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
 2. [2] S. S. Muchnick, *Advanced Compiler Design and Implementation*. San Francisco, CA, USA: Morgan Kaufmann, 1997.
