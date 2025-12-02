@@ -124,6 +124,190 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 
 ## 3. Desarrollo
 
+### Design Considerations
+- **Grammar:** Same as parser project (keywords, identifiers, operators, constants, literals, punctuation).
+- **Compilation Flow:**
+```
+┌─────────────────┐
+│  Código fuente  │  int main() { return 42; }
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  user_lexer.py  │  Tokenización
+└────────┬────────┘
+         │ [('keywords','int'), ('identifier','main'), ...]
+         ▼
+┌─────────────────┐
+│adapter_lexer.py │  Conversión a Token objects
+└────────┬────────┘
+         │ [Token('INT','int'), Token('ID','main'), ...]
+         ▼
+┌─────────────────┐
+│    parser.py    │  Parser + AST
+└────────┬────────┘
+         │ Program([FuncDecl('main', [], Return(Num(42)))])
+         ▼
+┌─────────────────┐
+│    parser.py    │  Análisis Semántico
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ir_generator.py  │  Generación IR (TAC)
+└────────┬────────┘
+         │ [IRFuncBegin('main'), IRReturn('42'), IRFuncEnd('main')]
+         ▼
+┌─────────────────┐
+│asm_generator.py │  Generación Ensamblador
+└────────┬────────┘
+         │ bits 64 / section .text / main: / push rbp / ...
+         ▼
+┌─────────────────┐
+│  NASM → GCC     │  Ensamblado y Enlazado
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Ejecutable.exe │
+└─────────────────┘
+```
+
+### Features
+- ✅ **Lexical Analysis:** Complete tokenization (from previous project)
+- ✅ **Syntax Analysis:** LL(1) recursive descent parser (from previous project)
+- ✅ **Semantic Analysis:** Type checking, symbol validation (from previous project)
+- ✅ **Intermediate Code Generation:** Three-Address Code with temporaries and labels
+- ✅ **Assembly Code Generation:** x86-64 NASM with Windows x64 calling convention
+- ✅ **Assembly & Linking:** NASM assembler + GCC linker to produce executables
+- ✅ **Error Reporting:** Clear error messages at each compilation phase
+- ✅ **CLI Options:** Inspect IR and assembly code, control compilation stages
+
+### Implementation 
+- **Main files:**
+  - `main.py` — Orchestrates all compilation phases, CLI interface
+  - `ir_generator.py` — Converts AST to Three-Address Code (373 lines)
+  - `asm_generator.py` — Converts TAC to x86-64 NASM assembly (319 lines)
+  - `parser.py` — Syntax and semantic analysis (from previous project)
+  - `lexer/adapter_lexer.py` — Lexical analysis adapter (from previous project)
+
+### IR Instruction Types
+The IR generator constructs Three-Address Code using the following instruction types:
+- `IRLabel` — Label definition for control flow
+- `IRAssign` — Simple assignment
+- `IRBinOp` — Binary operation (arithmetic, logical, relational)
+- `IRUnaryOp` — Unary operation
+- `IRGoto` — Unconditional jump
+- `IRIfFalseGoto` — Conditional jump (if false)
+- `IRCall` — Function call with arguments
+- `IRParam` — Parameter passing marker
+- `IRReturn` — Return statement
+- `IRFuncBegin` — Function prologue marker
+- `IRFuncEnd` — Function epilogue marker
+
+### Intermediate Code Generation
+
+So, in this part of the project, we basically took the Abstract Syntax Tree (AST) we built earlier and turned it into something simpler called three-address code. Think of it as a middle step between understanding what the code means and actually running it on a computer.
+
+The whole point of three-address code is pretty straightforward: no instruction can have more than three things in it. This might sound limiting, but it actually makes our lives way easier later on. Like, if you write something complicated like `x = a + b * c`, we just split it up: first do `t1 = b * c`, then `x = a + t1`. Nice and simple.
+
+To make this work, we built a system that walks through the entire AST and spits out these intermediate instructions as it goes. We use temporary variables with boring names like `t0`, `t1`, `t2`, and so on to hold results while we're calculating stuff. We also create labels (`L0`, `L1`, `L2`, etc.) that basically act like bookmarks for when we need to jump around in control structures.
+
+When we hit arithmetic or logical expressions, we just turn them into a bunch of simple binary operations. Every operation from the AST gets its own instruction that saves the result in a fresh temporary variable. Then other instructions can grab that value when they need it.
+
+Control structures needed some extra attention. For `if-else` statements, we create a sequence where we check the condition first, jump to wherever we need to go based on whether it's true or false, run that block of code, and then jump to the end. With `while` loops, we set up a starting point, check the condition there, bail out to the end if it's false, run the loop body, and jump back to the start.
+
+`for` loops are kind of cool because we just break them down into their basic parts: run the initialization once, set up a label at the start, check the condition, execute the body, do the increment step, and loop back around.
+
+Function calls turned into a series of instructions where we list out each argument, then call the function, and maybe save whatever it returns if we need it.
+
+Oh, and string handling is kind of neat. Whenever we find a string literal in the code, we give it a unique ID like `str0`, `str1`, whatever. These IDs show up in our intermediate code and eventually become labels in the assembly code.
+
+### Assembly Code Generation
+
+This is where things get real. We take those intermediate instructions and convert them into actual x86-64 assembly code that can run on Windows. We have to follow Windows' rules, manage the CPU registers properly, and make sure everything actually works.
+
+We just go through each intermediate instruction one by one and write out the matching assembly code. We're using NASM with Intel syntax because it's pretty readable and works well for what we need.
+
+#### Handling Variables and Memory
+
+One thing we had to figure out was where to put all the variables. We keep track of where each variable lives on the stack by giving it an offset from the `RBP` register. As we find new variables, we just bump the offset and remember where everything is. This lets us write stuff like `QWORD [rbp-8]` or `QWORD [rbp-16]` and actually point to the right place.
+
+#### Following the Rules
+
+Windows x64 has specific rules about how functions should work, and we had to follow them exactly. The first four arguments go in registers `RCX`, `RDX`, `R8`, and `R9`. If you had more than four (which our compiler doesn't really worry about), they'd go on the stack. There's also this weird "shadow space" thing where you have to reserve 32 bytes on the stack before calling a function, even if the function doesn't use it.
+
+#### How the Code Looks
+
+The assembly code we generate has a few sections. There's a data section (`.data`) where we put all the strings we found, each with its own label. Then there's the text section (`.text`) with all the actual code, including references to external functions like `printf` and `scanf`, plus all the functions from the program.
+
+Every function starts the same way: save the old `RBP` value, set `RBP` to point to the current stack position, and make room for local variables. At the end, we clean everything up by restoring the stack and returning.
+
+#### Turning Instructions into Assembly
+
+Simple assignments just become `mov` instructions that shuffle values around between registers and memory. Numbers get loaded straight in, but strings need `lea` (Load Effective Address) to grab their address from the label we created earlier.
+
+For binary operations, we load both operands into `RAX` and `RBX`, do the operation (`add`, `sub`, `imul`, `idiv`, whatever), and save the result. Comparisons are slightly more involved - we use `cmp` to compare things, then `setcc` to set a byte to 0 or 1 depending on the result, and extend that to 64 bits with `movzx`.
+
+Jumps are pretty straightforward. Conditional jumps use `test` to check if something is zero, then `jnz` or `jz` to jump based on that. Unconditional jumps are just `jmp`.
+
+Function calls are a bit of a production. Reserve the shadow space, load arguments into registers, do the `call`, clean up the shadow space, and grab the return value from `RAX` if we need it.
+
+#### Making It Better
+
+We threw in a few basic optimizations. Like, if we see a literal number, we just load it directly instead of doing something fancy. We also try to reuse `RAX` when we can to avoid moving stuff around in memory unnecessarily.
+
+We're pretty conservative with registers - mostly sticking to `RAX`, `RBX`, `RCX`, `RDX`, `R8`, and `R9`. This keeps things simple and leaves room for improvements later.
+
+### Putting It All Together
+
+The main module is basically the conductor of the whole orchestra. It runs everything from start to finish and gives you a command-line interface to control what happens.
+
+It starts by reading your source code file, then runs through each phase: lexical analysis to break it into tokens, parsing to build and check the AST, intermediate code generation, assembly translation, and finally assembling and linking to create the executable.
+
+Each step tells you what's happening. If something goes wrong, everything stops right there and you get an error message explaining what broke. This way you catch problems early instead of having them pile up.
+
+We added some flags so you can peek at what's happening inside. Use `--show-ir` to see the intermediate code, `--show-asm` to check out the assembly, or `--asm-only` if you just want the assembly file without going all the way to an executable.
+
+For the assembly step, we automatically call NASM to turn the assembly into object code. If you don't have NASM installed, the compiler will tell you where to get it. Same deal with GCC for linking - it glues everything together with the system libraries to make the final executable.
+
+We tried to handle errors well. Whether it's a missing file, bad characters, syntax mistakes, type errors, or problems during assembly or linking, you'll get a message that actually helps you figure out what went wrong.
+
+The nice thing about how we built this is that it's easy to add new stuff later. Want to add optimization or support for different architectures? Just slot in a new phase and you're good to go.
+
+### Usage
+```bash
+python main.py <source_file> [options]
+```
+
+#### Options
+
+- `--show-ir` - Display the generated intermediate code
+- `--show-asm` - Display the generated assembly code
+- `--asm-only` - Generate only the assembly file without assembling
+
+#### Requirements
+
+- Python 3.x
+- NASM (Netwide Assembler)
+- GCC (for linking)
+
+### Example
+```bash
+# Compile and run a program
+python main.py program.txt
+
+# View intermediate code
+python main.py program.txt --show-ir
+
+# View assembly code
+python main.py program.txt --show-asm
+
+# Generate assembly only
+python main.py program.txt --asm-only
+```
+
+
 ## 4. Resultados
 
 ### 4.1 Test 1
