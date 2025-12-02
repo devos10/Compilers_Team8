@@ -164,15 +164,6 @@ The input code passed the first stage correctly, but in the next phase a syntax 
 
 <img width="500" height="169" alt="image" src="https://github.com/user-attachments/assets/8496bd80-058b-4ff2-aaa8-b278916bbe50" />
 
-
-
-
-
-
-
-
-
-
 ## 5. Conclusion 
 
 The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
@@ -180,6 +171,91 @@ The development of the compiler demonstrates how theoretical principles in progr
 Additionally, the implementation confirms the relevance of using intermediate representations such as three-address code to simplify translation and maintain a clear flow of information across stages. Proper symbol management, semantic verification, and control-flow organization illustrate how theoretical concepts ensure that each transformation preserves the integrity of the original program.
 
 Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
+
+## How to run
+
+### Prerequisites
+- **Python 3.10 or higher** (for match-case syntax)
+- **NASM** (Netwide Assembler)
+  - Download: https://www.nasm.us/
+  - Add to PATH after installation
+- **GCC (MinGW-w64)** for Windows
+  - Download: https://winlibs.com/
+  - Install and add to PATH
+
+### Verify installations:
+```bash
+python --version    # Should be 3.10+
+nasm -v             # Should show NASM version
+gcc --version       # Should show GCC version
+```
+
+### Run with a file as argument (default)
+If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
+If the file is in another folder, you must pass the relative or absolute path.
+
+**Basic compilation:**
+```bash
+python main.py programa.c
+```
+This produces `programa.exe`.
+
+**Specify output name:**
+```bash
+python main.py programa.c -o salida
+```
+This produces `salida.exe`.
+
+**Show intermediate representation (IR):**
+```bash
+python main.py programa.c --show-ir
+```
+
+**Show assembly code:**
+```bash
+python main.py programa.c --show-asm
+```
+
+**Generate assembly only (no linking):**
+```bash
+python main.py programa.c --asm-only
+```
+This produces `programa.asm` and stops before assembly/linking.
+
+**Combine options:**
+```bash
+python main.py programa.c --show-ir --show-asm -o resultado
+```
+
+### Run the compiled executable:
+After successful compilation:
+```bash
+.\programa.exe
+```
+
+---
+
+## Known Limitations & Future Work
+
+**Current limitations:**
+- **No optimizations:** Generated code is not optimized (no dead code elimination, constant folding, register allocation, etc.).
+- **Simple register usage:** Only RAX and RBX used for operations; no sophisticated register allocation.
+- **Fixed stack allocation:** Functions reserve 64 bytes regardless of actual variable count.
+- **No array support:** Arrays and pointers not yet implemented.
+- **Limited control flow:** While `if`, `while`, `for` are supported in IR, complex nested structures may need testing.
+- **No error recovery:** Compilation stops at first error in any phase.
+- **Windows-only:** Currently targets Windows x64; Linux/Mac support would require different calling convention and linker.
+
+**Future improvements:**
+- **Code optimization:** Constant propagation, dead code elimination, common subexpression elimination.
+- **Register allocation:** Use more registers to reduce memory accesses.
+- **Dynamic stack allocation:** Calculate exact stack space needed per function.
+- **Cross-platform support:** Generate assembly for Linux (System V ABI) and macOS.
+- **Advanced features:** Arrays, pointers, structs, global variables.
+- **Better error recovery:** Continue compilation after errors to report multiple issues.
+- **Debugging support:** Generate debug symbols for GDB/LLDB.
+
+
 
 ## 6. References 
 1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, *Compilers: Principles, Techniques, and Tools*, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
