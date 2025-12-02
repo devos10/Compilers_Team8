@@ -122,15 +122,19 @@ The input code has no lexical, syntactic, or semantic errors, which allows the c
 <img width="500" height="749" alt="image" src="https://github.com/user-attachments/assets/51f5f0cb-9aac-48d4-a3a3-7c45a0fdc98c" />
 
 ### 4.6 Test 6
+The submitted code encountered a lexical analysis error because it contains an unexpected '@' character; therefore it cannot proceed to the subsequent phases.
 <img width="500" height="118" alt="image" src="https://github.com/user-attachments/assets/92b883e5-de55-4b7b-8596-bad26ca52ff3" />
 
 ### 4.7 Test 7
+The input code successfully passed the lexical analysis stage but had a syntax error because a ‘;’ is missing at the end of a declaration.
 <img width="500" height="184" alt="image" src="https://github.com/user-attachments/assets/f46466b9-6fda-49c0-9445-6457e7473f59" />
 
 ### 4.8 Test 8
+The input code passed the first stage correctly, but in the second phase it has a semantic error because an undeclared variable is being used.
 <img width="500" height="188" alt="image" src="https://github.com/user-attachments/assets/51089bcf-c771-4c90-bca7-3fb8d6006f29" />
 
 ### 4.9 Test 9
+The input code passed the first stage correctly, but in the next phase a syntax error was detected because a ')' is missing at the end of the condition.
 <img width="500" height="169" alt="image" src="https://github.com/user-attachments/assets/8496bd80-058b-4ff2-aaa8-b278916bbe50" />
 
 
