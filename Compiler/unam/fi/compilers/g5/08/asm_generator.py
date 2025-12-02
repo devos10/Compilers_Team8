@@ -14,7 +14,7 @@ Convenciones:
 from typing import List, Dict, Optional
 from ir_generator import (
     IRInstr, IRLabel, IRAssign, IRBinOp, IRUnaryOp,
-    IRGoto, IRIfGoto, IRIfFalseGoto, IRCall, IRReturn,
+    IRGoto, IRIfFalseGoto, IRCall, IRReturn,
     IRFuncBegin, IRFuncEnd, IRParam
 )
 
@@ -103,8 +103,6 @@ class AsmGenerator:
                 self.visit_unaryop(instr)
             case IRGoto():
                 self.visit_goto(instr)
-            case IRIfGoto():
-                self.visit_if_goto(instr)
             case IRIfFalseGoto():
                 self.visit_if_false_goto(instr)
             case IRParam():
@@ -250,13 +248,6 @@ class AsmGenerator:
     def visit_goto(self, instr: IRGoto):
         """goto label"""
         self.emit(f"    jmp .{instr.label}")
-    
-    def visit_if_goto(self, instr: IRIfGoto):
-        """if condition goto label"""
-        cond_loc = self.get_var_location(instr.condition)
-        self.emit(f"    mov rax, {cond_loc}")
-        self.emit(f"    test rax, rax")
-        self.emit(f"    jnz .{instr.label}")
     
     def visit_if_false_goto(self, instr: IRIfFalseGoto):
         """ifFalse condition goto label"""

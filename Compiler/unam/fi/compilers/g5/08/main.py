@@ -47,7 +47,7 @@ def compile_file(input_file: str, output_name: str = None, show_ir: bool = False
     
     # === FASE 2: Análisis Sintáctico ===
     print("\n=== FASE 2: Análisis Sintáctico ===")
-    from parser import Parser, SyntaxError_
+    from parser import Parser, SyntaxError_, SemanticError
     
     parser = Parser(tokens)
     try:
@@ -55,6 +55,9 @@ def compile_file(input_file: str, output_name: str = None, show_ir: bool = False
         print("✓ AST generado correctamente")
     except SyntaxError_ as e:
         print(f"✗ Error sintáctico: {e}")
+        return False
+    except SemanticError as e:
+        print(f"✗ Error semántico: {e}")
         return False
     
     # === FASE 3: Análisis Semántico ===
