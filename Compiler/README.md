@@ -129,7 +129,7 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - **Compilation Flow:**
 ```
 ┌─────────────────┐
-│  Código fuente  │  int main() { return 42; }
+│   Source Code   │  int main() { return 42; }
 └────────┬────────┘
          │
          ▼
