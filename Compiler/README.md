@@ -27,13 +27,13 @@ This project implements a **full-fledged compiler** in Python that transforms C-
 ---
 
 ## 1. Introduction
-### Problem Statement
+### 1.1 Problem Statement
 A compiler is a program that translates source code written in a high-level language into machine-executable instructions. The problem addressed in this project is the design and implementation of a complete compiler capable of processing C-like source code and generating Windows x86-64 executable files. This requires building a full compilation pipeline that includes lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and finally assembly and linking to produce a runnable program.
 
-### Motivation 
+### 1.2 Motivation 
 Developing a compiler provides a practical way to apply the theoretical concepts studied in the course, such as formal languages, parsing techniques, and program translation. Implementing each phase of the compilation process makes it possible to understand how source code is transformed from a human-readable form into machine code. This project strengthens the understanding of programming language design, improves problem-solving and software engineering skills, and offers direct experience with the internal workings of compilers and modern computing systems.
 
-### Objectives 
+### 1.3 Objectives 
 - To implement a functional compiler capable of translating C-like source code into Windows x86-64 executable files (.exe).
 
 - To develop all required phases of the compilation process: lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and assembly/linking.
@@ -42,7 +42,7 @@ Developing a compiler provides a practical way to apply the theoretical concepts
 
 ## 2. Theoretical Framework
 
-### 1. Preliminary compilation phases
+### 2.1 Preliminary compilation phases
 
 * *Lexical Analysis*
 
@@ -58,12 +58,12 @@ The parser consumes the token stream and organizes it according to the grammar o
 
 Semantic analysis verifies context-sensitive properties such as type compatibility, variable declaration, function usage, and correct application of operators. This phase ensures that only semantically meaningful programs proceed to further compilation. The semantic analyzer typically annotates the AST with type information and prepares it for translation into an intermediate form.
 
-### 2. Intermediate Representation (IR)
+### 2.2 Intermediate Representation (IR)
 After semantic validation, the AST is lowered into an intermediate representation (IR) that abstracts away from the source language syntax while preserving execution semantics. A well-designed IR is machine-independent, compact, and suitable for further analysis and translation [1].
 
 The IR consists of node structures representing arithmetic operations, logical comparisons, variable references, assignments, function constructs, and control-flow structures. These nodes express program semantics in a uniform format that simplifies subsequent lowering into TAC.
 
-### 3. Three-Address Code (TAC)
+### 2.3 Three-Address Code (TAC)
 Three-Address Code (TAC) is a linear, low-level intermediate representation in which each instruction contains at most one operator and up to three operands. TAC breaks down complex expressions into simple steps, typically of the form:
 
 text
@@ -74,15 +74,15 @@ This representation is favored in compiler design because it is easy to analyze,
 
 TAC includes explicit temporaries, arithmetic operations, assignments, control-flow jumps, and labels. Structured constructs such as if-else and while loops are lowered into explicit branching instructions, following classical translation schemes described in compiler literature [1].
 
-### 4. Control Flow and Labeling
+### 2.4 Control Flow and Labeling
 High-level control structures are translated into explicit control-flow sequences composed of labels and jumps. For example, loops rely on labels marking entry and continuation points, conditional expressions resolve into comparison operations followed by conditional jumps, and blocks translate into linear instruction sequences. 
 
-### 5. Code Generation
+### 2.5 Code Generation
 The code generation phase translates the intermediate representation —typically TAC or an equivalent IR—into the assembly language of the target architecture. Classical compilers produce low-level instructions such as x86-64 NASM, ARM, or RISC-V assembly, mapping abstract operations to concrete machine instructions while preserving the program’s semantics [1], [2]. This step requires selecting appropriate instruction sequences, managing temporary values, allocating registers or stack locations, and emitting explicit control-flow constructs.
 
 During this phase, symbolic labels produced by earlier IR transformations are resolved, control-flow graphs are linearized, and the program is lowered into a sequential form suitable for assembly and later transformation by assemblers and linkers. Code generation thus serves as the bridge between machine-independent representations and executable machine code, completing the compiler’s backend pipeline.
 
-### 6. Assembly and Linking
+### 2.6 Assembly and Linking
 Finally, the generated assembly-like instructions are aggregated into a single output. In classical systems, assembly and linking resolve symbol addresses, merge code sections, and produce a binary executable. 
 
 ## *Design in the current code:* ##
