@@ -101,7 +101,40 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 
 ## 4. Resultados
 
+### Test 1
 <img width="1444" height="631" alt="image" src="https://github.com/user-attachments/assets/794062a9-e775-474a-9442-3713c8fe6014" />
+
+### Test 2
+<img width="631" height="782" alt="image" src="https://github.com/user-attachments/assets/d60be885-05e4-4b69-9a91-21f2c8850221" />
+
+### Test 3
+<img width="636" height="595" alt="image" src="https://github.com/user-attachments/assets/6dd2689a-f0d4-44fc-a441-718944af52c1" />
+
+### Test 4
+<img width="603" height="757" alt="image" src="https://github.com/user-attachments/assets/2966920b-a369-4757-80b6-7bae9a922c7f" />
+
+### Test 5
+<img width="564" height="749" alt="image" src="https://github.com/user-attachments/assets/51f5f0cb-9aac-48d4-a3a3-7c45a0fdc98c" />
+
+### Test 6
+<img width="896" height="118" alt="image" src="https://github.com/user-attachments/assets/92b883e5-de55-4b7b-8596-bad26ca52ff3" />
+
+### Test 7
+<img width="789" height="184" alt="image" src="https://github.com/user-attachments/assets/f46466b9-6fda-49c0-9445-6457e7473f59" />
+
+### Test 8
+<img width="637" height="188" alt="image" src="https://github.com/user-attachments/assets/51089bcf-c771-4c90-bca7-3fb8d6006f29" />
+
+### Test 9
+<img width="826" height="169" alt="image" src="https://github.com/user-attachments/assets/8496bd80-058b-4ff2-aaa8-b278916bbe50" />
+
+
+
+
+
+
+
+
 
 
 ## 5. Conclusion 
