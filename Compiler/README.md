@@ -282,6 +282,7 @@ python main.py <source_file> [options]
 
 #### Options
 
+- `-o, --output` - Assign a specific name to the `.asm`, `.obj` and `.exe files`
 - `--show-ir` - Display the generated intermediate code
 - `--show-asm` - Display the generated assembly code
 - `--asm-only` - Generate only the assembly file without assembling
