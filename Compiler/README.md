@@ -134,12 +134,12 @@ Finally, the generated assembly-like instructions are aggregated into a single o
          │
          ▼
 ┌─────────────────┐
-│  user_lexer.py  │  Tokenización
+│  user_lexer.py  │  Tokenization
 └────────┬────────┘
          │ [('keywords','int'), ('identifier','main'), ...]
          ▼
 ┌─────────────────┐
-│adapter_lexer.py │  Conversión a Token objects
+│adapter_lexer.py │  Conversion to Token objects
 └────────┬────────┘
          │ [Token('INT','int'), Token('ID','main'), ...]
          ▼
@@ -149,22 +149,22 @@ Finally, the generated assembly-like instructions are aggregated into a single o
          │ Program([FuncDecl('main', [], Return(Num(42)))])
          ▼
 ┌─────────────────┐
-│    parser.py    │  Análisis Semántico
+│    parser.py    │  Semantic Analysis
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ir_generator.py  │  Generación IR (TAC)
+│ir_generator.py  │  IR Generation (TAC)
 └────────┬────────┘
          │ [IRFuncBegin('main'), IRReturn('42'), IRFuncEnd('main')]
          ▼
 ┌─────────────────┐
-│asm_generator.py │  Generación Ensamblador
+│asm_generator.py │  Assembler Generation
 └────────┬────────┘
          │ bits 64 / section .text / main: / push rbp / ...
          ▼
 ┌─────────────────┐
-│  NASM → GCC     │  Ensamblado y Enlazado
+│  NASM → GCC     │  Assembled and Linked
 └────────┬────────┘
          │
          ▼
@@ -275,7 +275,7 @@ We tried to handle errors well. Whether it's a missing file, bad characters, syn
 
 The nice thing about how we built this is that it's easy to add new stuff later. Want to add optimization or support for different architectures? Just slot in a new phase and you're good to go.
 
-### 3.8 Usage
+### 3.8 How to run
 ```bash
 python main.py <source_file> [options]
 ```
@@ -301,45 +301,7 @@ python --version    # Should be 3.10+
 nasm -v             # Should show NASM version
 gcc --version       # Should show GCC version
 ```
-
-### 3.9 Run with a file as argument (default)
-If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
-If the file is in another folder, you must pass the relative or absolute path.
-
-**Basic compilation:**
-```bash
-python main.py programa.c
-```
-This produces `programa.exe`.
-
-**Specify output name:**
-```bash
-python main.py programa.c -o salida
-```
-This produces `salida.exe`.
-
-**Show intermediate representation (IR):**
-```bash
-python main.py programa.c --show-ir
-```
-
-**Show assembly code:**
-```bash
-python main.py programa.c --show-asm
-```
-
-**Generate assembly only (no linking):**
-```bash
-python main.py programa.c --asm-only
-```
-This produces `programa.asm` and stops before assembly/linking.
-
-**Combine options:**
-```bash
-python main.py programa.c --show-ir --show-asm -o resultado
-```
-
-### 3.10 Run the compiled executable:
+### 3.9 Run the compiled executable:
 After successful compilation:
 ```bash
 .\programa.exe
@@ -359,7 +321,7 @@ echo $LASTEXITCODE  # Shows: 998
 
 The return value from main() becomes the program's exit code.
 
-### 3.11 Example
+### 3.10 Example
 ```bash
 # Compile and run a program
 python main.py program.txt
