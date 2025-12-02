@@ -27,18 +27,43 @@ This project implements a **full-fledged compiler** in Python that transforms C-
 ---
 
 ## 1. Introduction
-### 1.1 Problem Statement
-A compiler is a program that translates source code written in a high-level language into machine-executable instructions. The problem addressed in this project is the design and implementation of a complete compiler capable of processing C-like source code and generating Windows x86-64 executable files. This requires building a full compilation pipeline that includes lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and finally assembly and linking to produce a runnable program.
+A compiler is a program that translates source code written in a high-level language into machine code that can be executed directly by the computer. This project implements a complete compilation pipeline consisting of six distinct phases: lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and assembly & linking.
+
+This compiler accepts C-like source code and produces Windows x86-64 executables (.exe files) ready to run on modern Windows systems.
+### 1.1 Problem Formulation
+The objective of the project is to design and implement a complete compiler that:
+- Reads C-like source code from an input file.
+- Performs lexical, syntactic, and semantic analysis (phases already implemented in previous projects).
+- Generates intermediate representation (IR) using Three-Address Code.
+- Translates IR to x86-64 assembly language (NASM syntax).
+- Assembles and links the code to produce a Windows executable.
+- Provides options to inspect intermediate representations (IR and ASM) for debugging.
+- Reports errors at each compilation stage with informative messages.
+
+The main entry point is `main.py`, which orchestrates all compilation phases through the function `compile_file()`.
 
 ### 1.2 Motivation 
-Developing a compiler provides a practical way to apply the theoretical concepts studied in the course, such as formal languages, parsing techniques, and program translation. Implementing each phase of the compilation process makes it possible to understand how source code is transformed from a human-readable form into machine code. This project strengthens the understanding of programming language design, improves problem-solving and software engineering skills, and offers direct experience with the internal workings of compilers and modern computing systems.
+Understanding the complete compilation process from source code to executable is fundamental to computer science and software engineering. This project demonstrates:
+
+- How high-level abstractions are progressively lowered to machine code.
+- The role of intermediate representations in simplifying code generation.
+- The relationship between compiler phases and their interdependencies.
+- Practical aspects of code generation for a real-world architecture (x86-64).
+- Integration with external tools (NASM assembler and GCC linker).
+
+By implementing all six phases, we gain deep insight into how modern compilers work and the engineering challenges involved in translating human-readable code to machine instructions.
 
 ### 1.3 Objectives 
-- To implement a functional compiler capable of translating C-like source code into Windows x86-64 executable files (.exe).
-
-- To develop all required phases of the compilation process: lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and assembly/linking.
-
-- To apply theoretical concepts from the course through the construction of a complete, well-structured compilation system.
+- Generate **Three-Address Code (TAC)** intermediate representation from the AST.
+- Translate TAC instructions to **x86-64 assembly language** (NASM syntax, Intel format).
+- Produce syntactically correct assembly code following **Windows x64 calling convention**.
+- Support all language features: variable declarations, assignments, arithmetic/logical operations, function declarations/calls, control flow (if/else, while, for), and return statements.
+- Generate proper **function prologues and epilogues** with stack frame management.
+- Handle **string literals** and data section generation.
+- Assemble the generated code into **object files (.obj)** using NASM.
+- Link object files into **Windows executables (.exe)** using GCC.
+- Provide CLI options to inspect IR and assembly code for debugging.
+- Report errors at each compilation stage with clear messages.
 
 ## 2. Theoretical Framework
 
