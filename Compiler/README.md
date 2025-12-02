@@ -287,12 +287,79 @@ python main.py <source_file> [options]
 - `--asm-only` - Generate only the assembly file without assembling
 
 #### Requirements
+- **Python 3.10 or higher** (for match-case syntax)
+- **NASM** (Netwide Assembler)
+  - Download: https://www.nasm.us/
+  - Add to PATH after installation
+- **GCC (MinGW-w64)** for Windows
+  - Download: https://winlibs.com/
+  - Install and add to PATH
 
-- Python 3.x
-- NASM (Netwide Assembler)
-- GCC (for linking)
+ #### Verify installations:
+```bash
+python --version    # Should be 3.10+
+nasm -v             # Should show NASM version
+gcc --version       # Should show GCC version
+```
 
-### 3.9 Example
+### 3.9 Run with a file as argument (default)
+If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
+If the file is in another folder, you must pass the relative or absolute path.
+
+**Basic compilation:**
+```bash
+python main.py programa.c
+```
+This produces `programa.exe`.
+
+**Specify output name:**
+```bash
+python main.py programa.c -o salida
+```
+This produces `salida.exe`.
+
+**Show intermediate representation (IR):**
+```bash
+python main.py programa.c --show-ir
+```
+
+**Show assembly code:**
+```bash
+python main.py programa.c --show-asm
+```
+
+**Generate assembly only (no linking):**
+```bash
+python main.py programa.c --asm-only
+```
+This produces `programa.asm` and stops before assembly/linking.
+
+**Combine options:**
+```bash
+python main.py programa.c --show-ir --show-asm -o resultado
+```
+
+### 3.10 Run the compiled executable:
+After successful compilation:
+```bash
+.\programa.exe
+```
+
+*Note:* The programs do not print output to the screen. They return an exit code that can be checked:
+powershell
+.\programa.exe
+echo $LASTEXITCODE
+
+
+For example, with Test_E1.exe:
+powershell
+.\Test_E1.exe
+echo $LASTEXITCODE  # Shows: 998
+
+
+The return value from main() becomes the program's exit code.
+
+### 3.11 Example
 ```bash
 # Compile and run a program
 python main.py program.txt
@@ -369,66 +436,8 @@ The input code passed the first stage correctly, but in the next phase a syntax 
 - **Better error recovery:** Continue compilation after errors to report multiple issues.
 - **Debugging support:** Generate debug symbols for GDB/LLDB.
 
-## 6. How to run
-### 6.1 Prerequisites
-- **Python 3.10 or higher** (for match-case syntax)
-- **NASM** (Netwide Assembler)
-  - Download: https://www.nasm.us/
-  - Add to PATH after installation
-- **GCC (MinGW-w64)** for Windows
-  - Download: https://winlibs.com/
-  - Install and add to PATH
 
-### 6.2 Verify installations:
-```bash
-python --version    # Should be 3.10+
-nasm -v             # Should show NASM version
-gcc --version       # Should show GCC version
-```
-
-### 6.3 Run with a file as argument (default)
-If the file is in the same folder where you run the command, it is enough to indicate only the name and its extension.  
-If the file is in another folder, you must pass the relative or absolute path.
-
-**Basic compilation:**
-```bash
-python main.py programa.c
-```
-This produces `programa.exe`.
-
-**Specify output name:**
-```bash
-python main.py programa.c -o salida
-```
-This produces `salida.exe`.
-
-**Show intermediate representation (IR):**
-```bash
-python main.py programa.c --show-ir
-```
-
-**Show assembly code:**
-```bash
-python main.py programa.c --show-asm
-```
-
-**Generate assembly only (no linking):**
-```bash
-python main.py programa.c --asm-only
-```
-This produces `programa.asm` and stops before assembly/linking.
-
-**Combine options:**
-```bash
-python main.py programa.c --show-ir --show-asm -o resultado
-```
-
-### 6.4 Run the compiled executable:
-After successful compilation:
-```bash
-.\programa.exe
-```
-## 7. Conclusion 
+## 6. Conclusion 
 
 The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
 
@@ -437,6 +446,6 @@ Additionally, the implementation confirms the relevance of using intermediate re
 Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
 
 ---
-## 8. References 
+## 7. References 
 1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, *Compilers: Principles, Techniques, and Tools*, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
 2. [2] S. S. Muchnick, *Advanced Compiler Design and Implementation*. San Francisco, CA, USA: Morgan Kaufmann, 1997.
