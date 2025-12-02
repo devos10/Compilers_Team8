@@ -110,5 +110,5 @@ Additionally, the implementation confirms the relevance of using intermediate re
 Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
 
 ## 6. References 
-1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, Compilers: Principles, Techniques, and Tools, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
-2. [2] S. S. Muchnick, Advanced Compiler Design and Implementation. San Francisco, CA, USA: Morgan Kaufmann, 1997.
+1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, *Compilers: Principles, Techniques, and Tools*, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
+2. [2] S. S. Muchnick, *Advanced Compiler Design and Implementation*. San Francisco, CA, USA: Morgan Kaufmann, 1997.
