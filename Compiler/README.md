@@ -97,6 +97,10 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - *GCC* links object files with C runtime library to produce .exe executables.
 - Error handling at each phase with informative messages and installation instructions for external tools.
 
+## 3. Desarrollo
+
+## 4. Resultados
+
 ## 5. Conclusion 
 
 The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
