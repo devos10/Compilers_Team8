@@ -122,9 +122,9 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - *GCC* links object files with C runtime library to produce .exe executables.
 - Error handling at each phase with informative messages and installation instructions for external tools.
 
-## 3. Desarrollo
+## 3. Development
 
-### Design Considerations
+### 3.1 Design Considerations
 - **Grammar:** Same as parser project (keywords, identifiers, operators, constants, literals, punctuation).
 - **Compilation Flow:**
 ```
@@ -173,7 +173,7 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 └─────────────────┘
 ```
 
-### Features
+### 3.2 Features
 - ✅ **Lexical Analysis:** Complete tokenization (from previous project)
 - ✅ **Syntax Analysis:** LL(1) recursive descent parser (from previous project)
 - ✅ **Semantic Analysis:** Type checking, symbol validation (from previous project)
@@ -183,7 +183,7 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - ✅ **Error Reporting:** Clear error messages at each compilation phase
 - ✅ **CLI Options:** Inspect IR and assembly code, control compilation stages
 
-### Implementation 
+### 3.3 Implementation 
 - **Main files:**
   - `main.py` — Orchestrates all compilation phases, CLI interface
   - `ir_generator.py` — Converts AST to Three-Address Code 
@@ -191,7 +191,7 @@ Finally, the generated assembly-like instructions are aggregated into a single o
   - `parser.py` — Syntax and semantic analysis (from previous project)
   - `lexer/adapter_lexer.py` — Lexical analysis adapter (from previous project)
 
-### IR Instruction Types
+### 3.4 IR Instruction Types
 The IR generator constructs Three-Address Code using the following instruction types:
 - `IRLabel` — Label definition for control flow
 - `IRAssign` — Simple assignment
@@ -205,7 +205,7 @@ The IR generator constructs Three-Address Code using the following instruction t
 - `IRFuncBegin` — Function prologue marker
 - `IRFuncEnd` — Function epilogue marker
 
-### Intermediate Code Generation
+### 3.5 Intermediate Code Generation
 
 So, in this part of the project, we basically took the Abstract Syntax Tree (AST) we built earlier and turned it into something simpler called three-address code. Think of it as a middle step between understanding what the code means and actually running it on a computer.
 
@@ -223,7 +223,7 @@ Function calls turned into a series of instructions where we list out each argum
 
 Oh, and string handling is kind of neat. Whenever we find a string literal in the code, we give it a unique ID like `str0`, `str1`, whatever. These IDs show up in our intermediate code and eventually become labels in the assembly code.
 
-### Assembly Code Generation
+### 3.6 Assembly Code Generation
 
 This is where things get real. We take those intermediate instructions and convert them into actual x86-64 assembly code that can run on Windows. We have to follow Windows' rules, manage the CPU registers properly, and make sure everything actually works.
 
@@ -259,7 +259,7 @@ We threw in a few basic optimizations. Like, if we see a literal number, we just
 
 We're pretty conservative with registers - mostly sticking to `RAX`, `RBX`, `RCX`, `RDX`, `R8`, and `R9`. This keeps things simple and leaves room for improvements later.
 
-### Putting It All Together
+### 3.7 Putting It All Together
 
 The main module is basically the conductor of the whole orchestra. It runs everything from start to finish and gives you a command-line interface to control what happens.
 
@@ -275,7 +275,7 @@ We tried to handle errors well. Whether it's a missing file, bad characters, syn
 
 The nice thing about how we built this is that it's easy to add new stuff later. Want to add optimization or support for different architectures? Just slot in a new phase and you're good to go.
 
-### Usage
+### 3.8 Usage
 ```bash
 python main.py <source_file> [options]
 ```
@@ -292,7 +292,7 @@ python main.py <source_file> [options]
 - NASM (Netwide Assembler)
 - GCC (for linking)
 
-### Example
+### 3.9 Example
 ```bash
 # Compile and run a program
 python main.py program.txt
