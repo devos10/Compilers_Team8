@@ -26,7 +26,7 @@ This project implements a **full-fledged compiler** in Python that transforms C-
 
 ---
 
-## Introduction
+## 1. Introduction
 ### Problem Statement
 A compiler is a program that translates source code written in a high-level language into machine-executable instructions. The problem addressed in this project is the design and implementation of a complete compiler capable of processing C-like source code and generating Windows x86-64 executable files. This requires building a full compilation pipeline that includes lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and finally assembly and linking to produce a runnable program.
 
@@ -40,7 +40,7 @@ Developing a compiler provides a practical way to apply the theoretical concepts
 
 - To apply theoretical concepts from the course through the construction of a complete, well-structured compilation system.
 
-## Theoretical Framework
+## 2. Theoretical Framework
 
 ### 1. Preliminary compilation phases
 
@@ -96,10 +96,14 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 - *GCC* links object files with C runtime library to produce .exe executables.
 - Error handling at each phase with informative messages and installation instructions for external tools.
 
-## Conclusion 
+## 5. Conclusion 
 
 The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
 
 Additionally, the implementation confirms the relevance of using intermediate representations such as three-address code to simplify translation and maintain a clear flow of information across stages. Proper symbol management, semantic verification, and control-flow organization illustrate how theoretical concepts ensure that each transformation preserves the integrity of the original program.
 
 Overall, the project reinforces that compiler theory not only provides the conceptual foundations for each phase, but also establishes a methodological framework that guarantees coherent transitions between abstraction levels. This demonstrates that a deep understanding of formal models, internal data structures, and translation strategies is essential for building reliable and efficient compilation systems, underscoring the significance of the studied concepts within the field of compilers.
+
+## 6. Referencias
+1. [1] A. V. Aho, M. S. Lam, R. Sethi, and J. D. Ullman, Compilers: Principles, Techniques, and Tools, 2nd ed. Boston, MA, USA: Addison-Wesley, 2006.
+2. [2] S. S. Muchnick, Advanced Compiler Design and Implementation. San Francisco, CA, USA: Morgan Kaufmann, 1997.
