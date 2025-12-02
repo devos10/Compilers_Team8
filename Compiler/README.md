@@ -102,10 +102,10 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 ## 4. Resultados
 
 ### 4.1 Test 1
-<img width="1444" height="631" alt="image" src="https://github.com/user-attachments/assets/794062a9-e775-474a-9442-3713c8fe6014" width="300"/>
+<img width="500" height="631" alt="image" src="https://github.com/user-attachments/assets/794062a9-e775-474a-9442-3713c8fe6014"/>
 
 ### 4.2 Test 2
-<img width="631" height="782" alt="image" src="https://github.com/user-attachments/assets/d60be885-05e4-4b69-9a91-21f2c8850221" width="300"/>
+<img width="500" height="782" alt="image" src="https://github.com/user-attachments/assets/d60be885-05e4-4b69-9a91-21f2c8850221"/>
 
 ### 4.3 Test 3
 <img width="636" height="595" alt="image" src="https://github.com/user-attachments/assets/6dd2689a-f0d4-44fc-a441-718944af52c1" />
