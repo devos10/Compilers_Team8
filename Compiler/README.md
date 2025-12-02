@@ -102,18 +102,23 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 ## 4. Resultados
 
 ### 4.1 Test 1
+The input code has no lexical, syntactic, or semantic errors, which allows the compiler to correctly generate the parse tree and produce the intermediate code. This intermediate code is then translated into assembly language and finally assembled and linked to obtain the executable.
 <img width="1400" height="631" alt="image" src="https://github.com/user-attachments/assets/794062a9-e775-474a-9442-3713c8fe6014"/>
 
 ### 4.2 Test 2
+The input code has no lexical, syntactic, or semantic errors, which allows the compiler to correctly generate the parse tree and produce the intermediate code. This intermediate code is then translated into assembly language and finally assembled and linked to obtain the executable.
 <img width="500" height="782" alt="image" src="https://github.com/user-attachments/assets/d60be885-05e4-4b69-9a91-21f2c8850221"/>
 
 ### 4.3 Test 3
+The input code has no lexical, syntactic, or semantic errors, which allows the compiler to correctly generate the parse tree and produce the intermediate code. This intermediate code is then translated into assembly language and finally assembled and linked to obtain the executable.
 <img width="500" height="595" alt="image" src="https://github.com/user-attachments/assets/6dd2689a-f0d4-44fc-a441-718944af52c1" />
 
 ### 4.4 Test 4
+The input code has no lexical, syntactic, or semantic errors, which allows the compiler to correctly generate the parse tree and produce the intermediate code. This intermediate code is then translated into assembly language and finally assembled and linked to obtain the executable.
 <img width="500" height="757" alt="image" src="https://github.com/user-attachments/assets/2966920b-a369-4757-80b6-7bae9a922c7f" />
 
 ### 4.5 Test 5
+The input code has no lexical, syntactic, or semantic errors, which allows the compiler to correctly generate the parse tree and produce the intermediate code. This intermediate code is then translated into assembly language and finally assembled and linked to obtain the executable.
 <img width="500" height="749" alt="image" src="https://github.com/user-attachments/assets/51f5f0cb-9aac-48d4-a3a3-7c45a0fdc98c" />
 
 ### 4.6 Test 6
