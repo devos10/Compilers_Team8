@@ -44,17 +44,17 @@ Developing a compiler provides a practical way to apply the theoretical concepts
 
 ### 2.1 Preliminary compilation phases
 
-* *Lexical Analysis*
+* **Lexical Analysis**
 
 Lexical analysis, or scanning, partitions the raw source code into tokens, the atomic syntactic units of a programming language. A lexeme is the concrete sequence of characters that matches the pattern of a token (e.g., 123, if, "hola", printf). A token is the abstract category to which a lexeme belongs (e.g., INT, IDENTIFIER).
 
 The lexer is responsible for grouping characters into lexemes and producing tokens that encode their type and location in the input. This process relies on regular expressions and deterministic finite automata to recognize valid lexical structures efficiently.
 
-* *Syntax Analysis*
+* **Syntax Analysis**
 
 The parser consumes the token stream and organizes it according to the grammar of the language. During this phase, the syntax analyzer constructs an Abstract Syntax Tree (AST), a hierarchical representation of the program’s structural composition free of syntactic noise such as punctuation [1]. The parser enforces grammar rules and rejects programs that violate the language’s context-free syntax.
 
-* *Semantic Analysis*
+* **Semantic Analysis**
 
 Semantic analysis verifies context-sensitive properties such as type compatibility, variable declaration, function usage, and correct application of operators. This phase ensures that only semantically meaningful programs proceed to further compilation. The semantic analyzer typically annotates the AST with type information and prepares it for translation into an intermediate form.
 
@@ -66,9 +66,10 @@ The IR consists of node structures representing arithmetic operations, logical c
 ### 2.3 Three-Address Code (TAC)
 Three-Address Code (TAC) is a linear, low-level intermediate representation in which each instruction contains at most one operator and up to three operands. TAC breaks down complex expressions into simple steps, typically of the form:
 
-text
+```text
 t1 = x + y
 if t1 < 10 goto L1
+```
 
 This representation is favored in compiler design because it is easy to analyze, optimize, and translate to machine instructions.
 
@@ -85,7 +86,7 @@ During this phase, symbolic labels produced by earlier IR transformations are re
 ### 2.6 Assembly and Linking
 Finally, the generated assembly-like instructions are aggregated into a single output. In classical systems, assembly and linking resolve symbol addresses, merge code sections, and produce a binary executable. 
 
-## *Design in the current code:* ##
+## **Design in the current code:** ##
 - The lexer and parser are modular (implemented in previous projects).
 - The IR generator uses *Visitor pattern* to traverse the AST with match-case dispatch.
 - Three-Address Code uses *temporaries* (t0, t1, t2, ...) for intermediate results and *labels* (L0, L1, L2, ...) for control flow.
