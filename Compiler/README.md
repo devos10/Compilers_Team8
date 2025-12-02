@@ -101,6 +101,9 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 
 ## 4. Resultados
 
+<img width="1444" height="631" alt="image" src="https://github.com/user-attachments/assets/794062a9-e775-474a-9442-3713c8fe6014" />
+
+
 ## 5. Conclusion 
 
 The development of the compiler demonstrates how theoretical principles in programming language processing integrate to systematically address the problem of translating high-level code into an executable representation. The interaction among the phases —lexical recognition, syntactic parsing, semantic analysis, intermediate code generation, and subsequent lowering into assembly— highlights the necessity of formal structures and well-defined models to ensure correctness and consistency throughout the compilation pipeline.
