@@ -186,8 +186,8 @@ Finally, the generated assembly-like instructions are aggregated into a single o
 ### Implementation 
 - **Main files:**
   - `main.py` — Orchestrates all compilation phases, CLI interface
-  - `ir_generator.py` — Converts AST to Three-Address Code (373 lines)
-  - `asm_generator.py` — Converts TAC to x86-64 NASM assembly (319 lines)
+  - `ir_generator.py` — Converts AST to Three-Address Code 
+  - `asm_generator.py` — Converts TAC to x86-64 NASM assembly 
   - `parser.py` — Syntax and semantic analysis (from previous project)
   - `lexer/adapter_lexer.py` — Lexical analysis adapter (from previous project)
 
