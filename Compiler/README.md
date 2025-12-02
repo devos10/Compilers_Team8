@@ -39,3 +39,59 @@ Developing a compiler provides a practical way to apply the theoretical concepts
 - To develop all required phases of the compilation process: lexical analysis, syntax analysis, semantic analysis, intermediate code generation, assembly code generation, and assembly/linking.
 
 - To apply theoretical concepts from the course through the construction of a complete, well-structured compilation system.
+
+## Theoretical Framework
+
+### 1. Preliminary compilation phases
+
+* *Lexical Analysis*
+
+Lexical analysis, or scanning, partitions the raw source code into tokens, the atomic syntactic units of a programming language. A lexeme is the concrete sequence of characters that matches the pattern of a token (e.g., 123, if, "hola", printf). A token is the abstract category to which a lexeme belongs (e.g., INT, IDENTIFIER).
+
+The lexer is responsible for grouping characters into lexemes and producing tokens that encode their type and location in the input. This process relies on regular expressions and deterministic finite automata to recognize valid lexical structures efficiently.
+
+* *Syntax Analysis*
+
+The parser consumes the token stream and organizes it according to the grammar of the language. During this phase, the syntax analyzer constructs an Abstract Syntax Tree (AST), a hierarchical representation of the program’s structural composition free of syntactic noise such as punctuation [1]. The parser enforces grammar rules and rejects programs that violate the language’s context-free syntax.
+
+* *Semantic Analysis*
+
+Semantic analysis verifies context-sensitive properties such as type compatibility, variable declaration, function usage, and correct application of operators. This phase ensures that only semantically meaningful programs proceed to further compilation. The semantic analyzer typically annotates the AST with type information and prepares it for translation into an intermediate form.
+
+### 2. Intermediate Representation (IR)
+After semantic validation, the AST is lowered into an intermediate representation (IR) that abstracts away from the source language syntax while preserving execution semantics. A well-designed IR is machine-independent, compact, and suitable for further analysis and translation [1].
+
+The IR consists of node structures representing arithmetic operations, logical comparisons, variable references, assignments, function constructs, and control-flow structures. These nodes express program semantics in a uniform format that simplifies subsequent lowering into TAC.
+
+### 3. Three-Address Code (TAC)
+Three-Address Code (TAC) is a linear, low-level intermediate representation in which each instruction contains at most one operator and up to three operands. TAC breaks down complex expressions into simple steps, typically of the form:
+
+text
+t1 = x + y
+if t1 < 10 goto L1
+
+This representation is favored in compiler design because it is easy to analyze, optimize, and translate to machine instructions.
+
+TAC includes explicit temporaries, arithmetic operations, assignments, control-flow jumps, and labels. Structured constructs such as if-else and while loops are lowered into explicit branching instructions, following classical translation schemes described in compiler literature [1].
+
+### 4. Control Flow and Labeling
+High-level control structures are translated into explicit control-flow sequences composed of labels and jumps. For example, loops rely on labels marking entry and continuation points, conditional expressions resolve into comparison operations followed by conditional jumps, and blocks translate into linear instruction sequences. 
+
+### 5. Code Generation
+The code generation phase translates the intermediate representation —typically TAC or an equivalent IR—into the assembly language of the target architecture. Classical compilers produce low-level instructions such as x86-64 NASM, ARM, or RISC-V assembly, mapping abstract operations to concrete machine instructions while preserving the program’s semantics [1], [2]. This step requires selecting appropriate instruction sequences, managing temporary values, allocating registers or stack locations, and emitting explicit control-flow constructs.
+
+During this phase, symbolic labels produced by earlier IR transformations are resolved, control-flow graphs are linearized, and the program is lowered into a sequential form suitable for assembly and later transformation by assemblers and linkers. Code generation thus serves as the bridge between machine-independent representations and executable machine code, completing the compiler’s backend pipeline.
+
+### 6. Assembly and Linking
+Finally, the generated assembly-like instructions are aggregated into a single output. In classical systems, assembly and linking resolve symbol addresses, merge code sections, and produce a binary executable. 
+
+## *Design in the current code:* ##
+- The lexer and parser are modular (implemented in previous projects).
+- The IR generator uses *Visitor pattern* to traverse the AST with match-case dispatch.
+- Three-Address Code uses *temporaries* (t0, t1, t2, ...) for intermediate results and *labels* (L0, L1, L2, ...) for control flow.
+- The assembly generator translates IR instructions to x86-64 using *Visitor pattern* with match-case.
+- Variables and temporaries stored in *stack frame* (RBP-relative addressing).
+- *Windows x64 calling convention:* First 4 arguments in RCX, RDX, R8, R9; return value in RAX.
+- *NASM* assembles .asm files to .obj object files (PE/COFF format).
+- *GCC* links object files with C runtime library to produce .exe executables.
+- Error handling at each phase with informative messages and installation instructions for external tools.
