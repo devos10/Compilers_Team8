@@ -123,6 +123,7 @@ The input code has no lexical, syntactic, or semantic errors, which allows the c
 
 ### 4.6 Test 6
 The submitted code encountered a lexical analysis error because it contains an unexpected '@' character; therefore it cannot proceed to the subsequent phases.
+
 <img width="500" height="118" alt="image" src="https://github.com/user-attachments/assets/92b883e5-de55-4b7b-8596-bad26ca52ff3" />
 
 ### 4.7 Test 7
@@ -135,6 +136,7 @@ The input code passed the first stage correctly, but in the second phase it has 
 
 ### 4.9 Test 9
 The input code passed the first stage correctly, but in the next phase a syntax error was detected because a ')' is missing at the end of the condition.
+
 <img width="500" height="169" alt="image" src="https://github.com/user-attachments/assets/8496bd80-058b-4ff2-aaa8-b278916bbe50" />
 
 
